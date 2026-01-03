@@ -48,27 +48,29 @@ export default function VerseDisplay({
   return (
     <div
       onClick={isInteractive ? (e) => onVerseClick(e, verse) : undefined}
-      className={`rounded-lg border border-slate-200 dark:border-slate-700 p-4 transition-all ${
-        isInteractive ? "hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer" : ""
+      className={`group rounded-xl border border-transparent p-4 transition-all duration-200 ${
+        isInteractive 
+          ? "hover:bg-white dark:hover:bg-primary-900/50 hover:border-primary-200 dark:hover:border-primary-800 cursor-pointer hover:shadow-sm" 
+          : ""
       } relative`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-4">
         {/* 절 번호 */}
-        <span className="font-semibold text-slate-600 dark:text-slate-400 text-sm min-w-[2rem]">
+        <span className="font-sans font-medium text-stone-400 dark:text-primary-500 text-sm min-w-[1.5rem] pt-1.5 transition-colors group-hover:text-primary-500">
           {verse.verse}
         </span>
 
         {/* 본문 */}
         <div
-          className={`leading-relaxed flex-1 text-slate-800 dark:text-slate-200 ${getFontSizeClass(fontSize)} ${
+          className={`font-bible leading-relaxed flex-1 text-primary-900 dark:text-primary-50 ${getFontSizeClass(fontSize)} ${
             fontWeight === "bold" ? "font-bold" : "font-normal"
           }`}
         >
           <span
             className={
               hasHighlight
-                ? `${getBackgroundColorClass(highlightColor!)} px-1 py-0.5 rounded`
-                : ""
+                ? `${getBackgroundColorClass(highlightColor!)} px-1 py-0.5 rounded-md transition-all shadow-sm`
+                : "transition-all"
             }
           >
             {verse.text}
@@ -81,7 +83,7 @@ export default function VerseDisplay({
                 e.stopPropagation();
                 onNoteClick(e, verse);
               }}
-              className="ml-2 inline-flex items-center justify-center w-6 h-6 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all align-middle"
+              className="ml-3 inline-flex items-center justify-center w-7 h-7 rounded-full border border-stone-200 dark:border-primary-800 bg-white dark:bg-primary-900 hover:bg-paper-100 dark:hover:bg-primary-800 hover:border-paper-300 dark:hover:border-primary-700 transition-all align-middle shadow-sm text-paper-600 dark:text-paper-400"
               title="메모 보기"
             >
               <svg
@@ -90,12 +92,12 @@ export default function VerseDisplay({
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
-                className="w-4 h-4 text-slate-600 dark:text-slate-400"
+                className="w-4 h-4"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"
+                  d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
                 />
               </svg>
             </button>

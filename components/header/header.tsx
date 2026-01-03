@@ -14,47 +14,32 @@ export default function Header() {
   };
 
   return (
-    <header className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-      <div className="mx-auto max-w-6xl px-4 py-4">
+    <header className="sticky top-0 z-50 border-b border-stone-200 dark:border-primary-800 bg-paper-50/80 dark:bg-primary-950/80 backdrop-blur-xl transition-colors duration-300">
+      <div className="mx-auto max-w-6xl px-6 py-4">
         <div className="flex items-center justify-between">
-          <a href="/" className="flex items-center space-x-3">
-            <div className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
+          <a href="/" className="group flex items-center space-x-2">
+            <div className="text-2xl font-black tracking-tighter text-primary-700 dark:text-primary-200 group-hover:text-primary-500 transition-colors">
               Bible Soom
             </div>
           </a>
 
-          <nav className="flex items-center space-x-6">
-            <a
-              href="/books"
-              className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              성경
-            </a>
-            <a
-              href="/search"
-              className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              검색
-            </a>
-            {user && (
-              <a
-                href="/mypage"
-                className="text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-              >
-                마이페이지
-              </a>
-            )}
+          <nav className="flex items-center space-x-1">
+            <NavLink href="/books">성경</NavLink>
+            <NavLink href="/search">검색</NavLink>
+            {user && <NavLink href="/mypage">서재</NavLink>}
+
+            <div className="w-px h-4 bg-stone-300 dark:bg-primary-800 mx-3 hidden sm:block" />
 
             {loading ? (
-              <div className="w-20 h-9 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"></div>
+              <div className="w-20 h-9 bg-stone-100 dark:bg-primary-900 rounded-xl animate-pulse"></div>
             ) : user ? (
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-slate-600 dark:text-slate-400 hidden sm:block">
+                <span className="text-xs font-bold text-stone-500 dark:text-primary-400 hidden lg:block">
                   {user.email}
                 </span>
                 <button
                   onClick={handleSignOut}
-                  className="px-4 py-2 text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                  className="px-4 py-2 text-xs font-bold bg-stone-100 dark:bg-primary-900 text-stone-600 dark:text-primary-300 rounded-xl hover:bg-stone-200 dark:hover:bg-primary-800 hover:text-stone-800 transition-all"
                 >
                   로그아웃
                 </button>
@@ -63,15 +48,15 @@ export default function Header() {
               <div className="flex items-center space-x-2">
                 <a
                   href="/login"
-                  className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                  className="px-4 py-2 text-xs font-bold text-stone-600 dark:text-primary-300 hover:text-primary-600 dark:hover:text-primary-100 transition-colors"
                 >
                   로그인
                 </a>
                 <a
                   href="/signup"
-                  className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="px-5 py-2 text-xs font-bold bg-primary-600 text-white rounded-xl hover:bg-primary-700 shadow-md shadow-primary-500/20 transition-all active:scale-95"
                 >
-                  회원가입
+                  시작하기
                 </a>
               </div>
             )}
@@ -79,5 +64,16 @@ export default function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      className="px-4 py-2 text-sm font-bold text-stone-600 dark:text-primary-300 hover:text-primary-700 dark:hover:text-white rounded-xl hover:bg-paper-100 dark:hover:bg-primary-900/50 transition-all"
+    >
+      {children}
+    </a>
   );
 }

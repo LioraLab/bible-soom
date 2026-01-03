@@ -1,5 +1,5 @@
 import { authGuard } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import MyPageClient from "@/components/mypage/mypage-client";
 
 export const dynamic = "force-dynamic";
 
@@ -9,19 +9,35 @@ export default async function MyPage() {
   if ("error" in guard) {
     // 로그인 필요
     return (
-      <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">
-          로그인이 필요합니다
-        </h1>
-        <p className="text-slate-600 dark:text-slate-400 mb-8">
-          마이페이지를 이용하려면 로그인이 필요합니다.
-        </p>
-        <a
-          href="/"
-          className="inline-block rounded-lg bg-indigo-600 dark:bg-indigo-500 px-6 py-3 text-white hover:bg-indigo-700 dark:hover:bg-indigo-600"
-        >
-          홈으로 돌아가기
-        </a>
+      <div className="min-h-screen flex items-center justify-center bg-paper-50 dark:bg-primary-950 px-6">
+        <div className="max-w-md w-full text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="w-24 h-24 bg-white dark:bg-primary-900 rounded-[2rem] flex items-center justify-center mx-auto text-4xl shadow-xl shadow-primary-900/5 border border-stone-100 dark:border-primary-800">
+            🔒
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-primary-900 dark:text-primary-50 mb-3 tracking-tight">
+              로그인이 필요합니다
+            </h1>
+            <p className="text-stone-500 dark:text-primary-300 font-medium">
+              나만의 서재를 이용하려면 로그인이 필요합니다.<br/>
+              계정이 없다면 지금 바로 시작해보세요.
+            </p>
+          </div>
+          <div className="flex gap-3 justify-center">
+            <a
+              href="/login"
+              className="inline-block rounded-2xl bg-white dark:bg-primary-800 px-8 py-4 text-primary-700 dark:text-primary-200 font-black hover:bg-paper-50 dark:hover:bg-primary-700 border border-stone-200 dark:border-primary-700 transition-all shadow-sm"
+            >
+              로그인
+            </a>
+            <a
+              href="/signup"
+              className="inline-block rounded-2xl bg-primary-600 px-8 py-4 text-white font-black hover:bg-primary-700 shadow-xl shadow-primary-500/20 transition-all active:scale-95"
+            >
+              회원가입
+            </a>
+          </div>
+        </div>
       </div>
     );
   }
@@ -45,66 +61,13 @@ export default async function MyPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 space-y-8">
-      <header className="border-b border-slate-200 dark:border-slate-700 pb-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">마이페이지</h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{user.email}</p>
-          </div>
-          <a
-            href="/"
-            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm"
-          >
-            ← 홈으로
-          </a>
-        </div>
-      </header>
-
-      <Section title="📝 메모" items={notes.data ?? []} isNote />
-      <Section title="✨ 하이라이트" items={highlights.data ?? []} />
-      <Section title="🔖 북마크" items={bookmarks.data ?? []} />
-    </div>
-  );
-}
-
-function Section({
-  title,
-  items,
-  isNote = false,
-}: {
-  title: string;
-  items: any[];
-  isNote?: boolean;
-}) {
-  return (
-    <div className="space-y-3">
-      <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">{title}</h2>
-      {items.length === 0 ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400 py-4">없음</p>
-      ) : (
-        <div className="space-y-2">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-lg border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800"
-            >
-              <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-                {/* @ts-ignore */}
-                {item.verses.book} {item.verses.chapter}:
-                {/* @ts-ignore */}
-                {item.verses.verse}
-              </p>
-              {isNote && (
-                <div
-                  className="mt-2 prose prose-sm dark:prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{ __html: item.content }}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="min-h-screen bg-paper-50 dark:bg-primary-950 transition-colors duration-500">
+      <MyPageClient 
+        userEmail={user.email!}
+        notes={notes.data ?? []}
+        highlights={highlights.data ?? []}
+        bookmarks={bookmarks.data ?? []}
+      />
     </div>
   );
 }

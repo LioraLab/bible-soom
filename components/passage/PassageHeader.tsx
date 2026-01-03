@@ -147,37 +147,37 @@ export default function PassageHeader({
       )}
 
       {/* 상단 네비게이션 박스 */}
-      <div className="flex flex-wrap items-center gap-3 mb-6 px-40 py-4 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900">
+      <div className="sticky top-4 z-30 flex flex-wrap items-center gap-3 mb-10 px-6 py-4 border border-stone-200/60 dark:border-primary-800/60 rounded-2xl bg-paper-50/90 dark:bg-primary-950/90 backdrop-blur-md shadow-sm transition-colors duration-500">
         {/* 책/장 선택 드롭다운 */}
         <div className="relative" ref={bookSelectorRef}>
           <button
             onClick={() => setShowBookSelector(!showBookSelector)}
-            className="px-4 py-2 pr-10 bg-white dark:bg-slate-800 rounded-full border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all min-w-[140px] relative"
+            className="px-5 py-2.5 pr-10 bg-white dark:bg-primary-900/50 rounded-xl border border-stone-200 dark:border-primary-800 text-primary-900 dark:text-primary-100 hover:bg-paper-50 dark:hover:bg-primary-800 hover:border-primary-300 dark:hover:border-primary-700 transition-all min-w-[150px] relative shadow-sm"
           >
-            <span>{book} {chapter}장</span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+            <span className="font-bold">{book} {chapter}장</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
             </svg>
           </button>
 
           {/* 책/장 선택 드롭다운 메뉴 */}
           {showBookSelector && (
-            <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-50 w-[400px] max-h-[400px] overflow-hidden">
-              <div className="grid grid-cols-2">
+            <div className="absolute top-full left-0 mt-3 bg-white dark:bg-primary-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-primary-800 z-50 w-[420px] max-h-[450px] overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="grid grid-cols-2 h-full">
                 {/* 왼쪽: 성경 목록 */}
-                <div className="border-r border-slate-200 dark:border-slate-700">
-                  <div className="bg-slate-100 dark:bg-slate-900 px-4 py-2 font-semibold text-slate-700 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700">
+                <div className="border-r border-stone-100 dark:border-primary-800">
+                  <div className="bg-paper-50 dark:bg-primary-950 px-5 py-3 text-xs font-black uppercase tracking-wider text-stone-500 dark:text-primary-400 border-b border-stone-100 dark:border-primary-800">
                     성경 목록
                   </div>
-                  <div className="overflow-y-auto max-h-[350px]">
+                  <div className="overflow-y-auto max-h-[380px] p-1">
                     {availableBooks.map((bookItem) => (
                       <button
                         key={bookItem.id}
                         onClick={() => setSelectedBookForNav(bookItem.name)}
-                        className={`w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
+                        className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-colors ${
                           selectedBookForNav === bookItem.name
-                            ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-semibold"
-                            : "text-slate-700 dark:text-slate-200"
+                            ? "bg-primary-50 dark:bg-primary-800 text-primary-700 dark:text-primary-200 font-bold"
+                            : "text-stone-600 dark:text-primary-300 hover:bg-stone-50 dark:hover:bg-primary-800"
                         }`}
                       >
                         {bookItem.name}
@@ -187,29 +187,31 @@ export default function PassageHeader({
                 </div>
 
                 {/* 오른쪽: 장 */}
-                <div>
-                  <div className="bg-slate-100 dark:bg-slate-900 px-4 py-2 font-semibold text-slate-700 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700">
-                    장
+                <div className="bg-paper-50/30 dark:bg-primary-900/30">
+                  <div className="bg-paper-50 dark:bg-primary-950 px-5 py-3 text-xs font-black uppercase tracking-wider text-stone-500 dark:text-primary-400 border-b border-stone-100 dark:border-primary-800">
+                    장 선택
                   </div>
-                  <div className="overflow-y-auto max-h-[350px]">
-                    {(() => {
-                      const selectedBook = availableBooks.find(b => b.name === selectedBookForNav);
-                      const chapterCount = selectedBook?.chapters || BOOK_CHAPTERS[selectedBookForNav] || 0;
+                  <div className="overflow-y-auto max-h-[380px] p-2">
+                    <div className="grid grid-cols-3 gap-1">
+                      {(() => {
+                        const selectedBook = availableBooks.find(b => b.name === selectedBookForNav);
+                        const chapterCount = selectedBook?.chapters || BOOK_CHAPTERS[selectedBookForNav] || 0;
 
-                      return Array.from({ length: chapterCount }, (_, i) => i + 1).map((chapterNum) => (
-                        <button
-                          key={chapterNum}
-                          onClick={() => handleBookChapterSelectInternal(selectedBookForNav, chapterNum)}
-                          className={`w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
-                            selectedBookForNav === book && chapterNum === chapter
-                              ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-semibold"
-                              : "text-slate-700 dark:text-slate-200"
-                          }`}
-                        >
-                          {chapterNum}장
-                        </button>
-                      ));
-                    })()}
+                        return Array.from({ length: chapterCount }, (_, i) => i + 1).map((chapterNum) => (
+                          <button
+                            key={chapterNum}
+                            onClick={() => handleBookChapterSelectInternal(selectedBookForNav, chapterNum)}
+                            className={`flex items-center justify-center h-10 rounded-lg text-sm transition-colors ${
+                              selectedBookForNav === book && chapterNum === chapter
+                                ? "bg-primary-600 text-white font-bold shadow-md shadow-primary-500/20"
+                                : "text-stone-600 dark:text-primary-300 hover:bg-white dark:hover:bg-primary-800 border border-transparent hover:border-stone-200 dark:hover:border-primary-700"
+                            }`}
+                          >
+                            {chapterNum}
+                          </button>
+                        ));
+                      })()}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -218,14 +220,14 @@ export default function PassageHeader({
         </div>
 
         {/* 구분선 */}
-        <div className="h-8 w-px bg-slate-300 dark:bg-slate-600"></div>
+        <div className="h-6 w-px bg-stone-200 dark:bg-primary-800 mx-1"></div>
 
         {/* 첫 번째 번역본 선택 */}
         <div className="relative">
           <select
             value={translation}
             onChange={(e) => onTranslationChange(e.target.value)}
-            className="px-4 py-2 pr-10 bg-white dark:bg-slate-800 rounded-full border-2 border-slate-300 dark:border-slate-700 text-black dark:text-slate-100 outline-none cursor-pointer appearance-none"
+            className="px-4 py-2.5 pr-10 bg-white dark:bg-primary-900 rounded-xl border border-stone-200 dark:border-primary-800 text-primary-900 dark:text-primary-100 outline-none cursor-pointer appearance-none hover:border-primary-300 dark:hover:border-primary-700 transition-all shadow-sm font-medium"
           >
             {TRANSLATIONS.map((t) => (
               <option key={t.code} value={t.code} disabled={!t.available}>
@@ -233,7 +235,7 @@ export default function PassageHeader({
               </option>
             ))}
           </select>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-black dark:text-slate-100">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
         </div>
@@ -249,16 +251,16 @@ export default function PassageHeader({
                 onSecondTranslationChange(secondTranslation, false);
               }
             }}
-            className="px-4 py-2 pr-10 bg-white dark:bg-slate-800 rounded-full border-2 border-slate-300 dark:border-slate-700 text-black dark:text-slate-100 outline-none cursor-pointer appearance-none"
+            className="px-4 py-2.5 pr-10 bg-white dark:bg-primary-900 rounded-xl border border-stone-200 dark:border-primary-800 text-primary-900 dark:text-primary-100 outline-none cursor-pointer appearance-none hover:border-primary-300 dark:hover:border-primary-700 transition-all shadow-sm font-medium"
           >
-            <option value="">번역본 선택</option>
+            <option value="">병렬 보기</option>
             {TRANSLATIONS.filter(t => t.code !== translation).map((t) => (
               <option key={t.code} value={t.code} disabled={!t.available}>
                 {t.name} {!t.available ? '(준비중)' : ''}
               </option>
             ))}
           </select>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-black dark:text-slate-100">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
         </div>
@@ -267,9 +269,9 @@ export default function PassageHeader({
         {isParallelView && (
           <button
             onClick={onParallelViewClose}
-            className="px-3 py-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-all text-sm"
+            className="px-3 py-2 bg-stone-100 dark:bg-primary-800 rounded-lg text-stone-600 dark:text-primary-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-all text-xs font-bold"
           >
-            X 병렬보기 해제
+            해제
           </button>
         )}
 
@@ -279,31 +281,34 @@ export default function PassageHeader({
         <div className="relative" ref={fontSizeMenuRef}>
           <button
             onClick={() => setShowFontSizeMenu(!showFontSizeMenu)}
-            className="w-10 h-10 rounded-full border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all relative"
+            className={`w-11 h-11 rounded-xl border transition-all flex items-center justify-center relative shadow-sm ${
+              showFontSizeMenu 
+              ? "bg-primary-600 border-primary-600 text-white shadow-md shadow-primary-500/20" 
+              : "bg-white dark:bg-primary-900 border-stone-200 dark:border-primary-800 text-stone-600 dark:text-primary-200 hover:border-primary-300 dark:hover:border-primary-700"
+            }`}
           >
-            <span className="text-xs translate-y-0.5">가</span>
-            <span className="text-base font-bold -translate-y-0.5">가</span>
+            <span className="text-xs translate-y-0.5 font-bold">가</span>
+            <span className="text-lg font-black -translate-y-0.5">가</span>
           </button>
 
           {/* 글자 크기 설정 메뉴 */}
           {showFontSizeMenu && (
-            <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-50 w-[300px] p-4">
+            <div className="absolute top-full right-0 mt-3 bg-white dark:bg-primary-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-primary-800 z-50 w-[320px] p-6 animate-in fade-in slide-in-from-top-2 duration-200">
               {/* 글자 크기 */}
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">글자 크기</h3>
+              <div className="mb-6">
+                <h3 className="text-xs font-black uppercase tracking-wider text-stone-400 dark:text-primary-500 mb-4">글자 크기</h3>
                 <div className="grid grid-cols-5 gap-2">
                   {[1, 2, 3, 4, 5].map((size) => (
                     <button
                       key={size}
                       onClick={() => onFontSizeChange(size)}
-                      className={`py-2 rounded-lg transition-all ${
+                      className={`h-10 rounded-lg transition-all flex items-center justify-center ${
                         fontSize === size
-                          ? "bg-indigo-600 text-white"
-                          : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600"
+                          ? "bg-primary-600 text-white shadow-lg shadow-primary-500/30"
+                          : "bg-stone-50 dark:bg-primary-800 text-stone-600 dark:text-primary-200 hover:bg-stone-100 dark:hover:bg-primary-700"
                       }`}
-                      style={{ fontSize: `${10 + size * 2}px` }}
                     >
-                      가
+                      <span style={{ fontSize: `${12 + size * 1}px` }} className="font-bold">가</span>
                     </button>
                   ))}
                 </div>
@@ -311,24 +316,24 @@ export default function PassageHeader({
 
               {/* 글자 굵기 */}
               <div>
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">글자 굵기</h3>
-                <div className="grid grid-cols-2 gap-2">
+                <h3 className="text-xs font-black uppercase tracking-wider text-stone-400 dark:text-primary-500 mb-4">글자 굵기</h3>
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => onFontWeightChange("normal")}
-                    className={`py-2 rounded-lg transition-all ${
+                    className={`py-2.5 rounded-lg text-sm transition-all font-medium ${
                       fontWeight === "normal"
-                        ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600"
+                        ? "bg-primary-600 text-white shadow-lg shadow-primary-500/30"
+                        : "bg-stone-50 dark:bg-primary-800 text-stone-600 dark:text-primary-200 hover:bg-stone-100 dark:hover:bg-primary-700"
                     }`}
                   >
                     보통
                   </button>
                   <button
                     onClick={() => onFontWeightChange("bold")}
-                    className={`py-2 rounded-lg transition-all font-bold ${
+                    className={`py-2.5 rounded-lg text-sm transition-all font-bold ${
                       fontWeight === "bold"
-                        ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600"
+                        ? "bg-primary-600 text-white shadow-lg shadow-primary-500/30"
+                        : "bg-stone-50 dark:bg-primary-800 text-stone-600 dark:text-primary-200 hover:bg-stone-100 dark:hover:bg-primary-700"
                     }`}
                   >
                     굵게
@@ -342,10 +347,10 @@ export default function PassageHeader({
         {/* 책갈피 버튼 */}
         <button
           onClick={onChapterBookmarkToggle}
-          className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
+          className={`w-11 h-11 rounded-xl border flex items-center justify-center transition-all shadow-sm ${
             isChapterBookmarked
-              ? "bg-indigo-600 border-indigo-600 hover:bg-indigo-700 hover:border-indigo-700"
-              : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"
+              ? "bg-paper-500 border-paper-500 hover:bg-paper-600 hover:border-paper-600 shadow-lg shadow-paper-500/30 text-white"
+              : "border-stone-200 dark:border-primary-800 bg-white dark:bg-primary-900 text-stone-400 hover:border-paper-400 hover:text-paper-500"
           }`}
           title={isChapterBookmarked ? "책갈피 해제" : "책갈피 추가"}
         >
@@ -354,8 +359,8 @@ export default function PassageHeader({
             viewBox="0 0 24 24"
             fill={isChapterBookmarked ? "currentColor" : "none"}
             stroke="currentColor"
-            strokeWidth={2}
-            className={`w-5 h-5 ${isChapterBookmarked ? "text-white" : "text-slate-700 dark:text-slate-200"}`}
+            strokeWidth={2.5}
+            className="w-5 h-5"
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
           </svg>

@@ -3,21 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fdfcf8; /* paper-50: Warm Beige White */
+  --foreground: #244668; /* primary-700: Deep Navy Text */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #132131; /* primary-950: Deep Dark Navy */
+  --foreground: #dce5ed; /* primary-100: Soft Blue White */
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
 }
 
 @layer utilities {

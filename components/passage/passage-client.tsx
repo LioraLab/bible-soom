@@ -498,85 +498,109 @@ export default function PassageClient({
 
       {/* 메모 모달 */}
       {noteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-2xl w-full space-y-4">
+        <div className="fixed inset-0 bg-primary-950/40 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-primary-900 rounded-[2rem] shadow-2xl shadow-primary-900/20 max-w-2xl w-full overflow-hidden border border-stone-100 dark:border-primary-800 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
             {/* 헤더 */}
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-                {isEditMode
-                  ? notedVerseIds.has(noteModal.id)
-                    ? "메모 수정"
-                    : "메모 작성"
-                  : "메모 보기"}
-              </h3>
+            <div className="px-8 py-6 bg-paper-50 dark:bg-primary-950 border-b border-stone-100 dark:border-primary-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-primary-900 dark:text-primary-50 tracking-tight mb-1">
+                  {isEditMode
+                    ? notedVerseIds.has(noteModal.id)
+                      ? "Edit Reflection"
+                      : "New Reflection"
+                    : "Reflection Note"}
+                </h3>
+                <p className="text-sm font-bold text-stone-500 dark:text-primary-400 font-bible">
+                  {decodedBook} {chapter}:{noteModal.verse}
+                </p>
+              </div>
 
-              {/* 보기 모드: 수정 버튼 */}
-              {!isEditMode && (
-                <button
-                  onClick={enterEditMode}
-                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 text-sm font-medium px-3 py-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                >
-                  수정
-                </button>
-              )}
+              <div className="flex gap-2">
+                {/* 보기 모드: 수정 버튼 */}
+                {!isEditMode && (
+                  <button
+                    onClick={enterEditMode}
+                    className="p-2 rounded-xl text-primary-600 dark:text-primary-300 hover:bg-white dark:hover:bg-primary-800 border border-transparent hover:border-stone-200 dark:hover:border-primary-700 transition-all shadow-sm"
+                    title="수정"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                    </svg>
+                  </button>
+                )}
 
-              {/* 편집 모드: 삭제 버튼 */}
-              {isEditMode && notedVerseIds.has(noteModal.id) && (
+                {/* 편집 모드: 삭제 버튼 */}
+                {isEditMode && notedVerseIds.has(noteModal.id) && (
+                  <button
+                    onClick={deleteNote}
+                    className="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-100 transition-all"
+                    title="삭제"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                  </button>
+                )}
+
                 <button
-                  onClick={deleteNote}
-                  className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium px-3 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  onClick={closeNoteModal}
+                  className="p-2 rounded-xl text-stone-400 hover:bg-stone-100 dark:hover:bg-primary-800 transition-all"
+                  title="닫기"
                 >
-                  삭제
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
-              )}
+              </div>
             </div>
 
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              {decodedBook} {chapter}:{noteModal.verse}
-            </p>
-
-            {/* 편집 모드: 에디터 */}
-            {isEditMode ? (
-              <>
-                <RichTextEditor
-                  content={note}
-                  onChange={setNote}
-                  placeholder="묵상 내용을 입력하세요..."
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={saveNote}
-                    className="flex-1 rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-                  >
-                    저장
-                  </button>
-                  <button
-                    onClick={closeNoteModal}
-                    className="flex-1 rounded px-4 py-2 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 dark:text-slate-200"
-                  >
-                    취소
-                  </button>
+            {/* 컨텐츠 영역 */}
+            <div className="p-8">
+              {/* 편집 모드: 에디터 */}
+              {isEditMode ? (
+                <div className="space-y-6">
+                  <div className="relative">
+                    <RichTextEditor
+                      content={note}
+                      onChange={setNote}
+                      placeholder="이 말씀이 당신에게 어떤 의미인가요?"
+                    />
+                  </div>
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      onClick={closeNoteModal}
+                      className="px-6 py-3 rounded-xl text-sm font-bold text-stone-500 dark:text-primary-400 hover:bg-stone-100 dark:hover:bg-primary-800 transition-colors"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={saveNote}
+                      className="px-8 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-black shadow-lg shadow-primary-500/20 transition-all active:scale-95 flex items-center gap-2"
+                    >
+                      <span>저장하기</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-              </>
-            ) : (
-              /* 보기 모드: 메모 내용 표시 */
-              <>
-                <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 border border-slate-200 dark:border-slate-700 max-h-[400px] overflow-y-auto">
-                  <div
-                    className="prose prose-sm dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{ __html: note }}
-                  />
+              ) : (
+                /* 보기 모드: 메모 내용 표시 */
+                <div className="min-h-[200px]">
+                  <div className="relative pl-6 border-l-2 border-primary-200 dark:border-primary-700">
+                    <div
+                      className="prose prose-stone dark:prose-invert max-w-none font-medium text-lg leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: note }}
+                    />
+                  </div>
+                  <div className="mt-8 pt-6 border-t border-stone-100 dark:border-primary-800 text-right">
+                    <span className="text-xs font-bold text-stone-400 dark:text-primary-500 uppercase tracking-widest">
+                      Saved Reflection
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-end">
-                  <button
-                    onClick={closeNoteModal}
-                    className="rounded px-4 py-2 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 dark:text-slate-200"
-                  >
-                    닫기
-                  </button>
-                </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

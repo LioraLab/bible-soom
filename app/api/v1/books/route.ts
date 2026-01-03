@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("books")
-    .select("id, name, testament, chapters")
+    .select("id, name, testament, chapters, book_order")
     .order("book_order", { ascending: true });
 
   if (testament && (testament === "OT" || testament === "NT")) {

@@ -35,25 +35,31 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-b from-indigo-50 to-white dark:from-slate-900 dark:to-slate-800">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-paper-50 dark:bg-primary-950 relative overflow-hidden transition-colors duration-500">
+      {/* 배경 장식 */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-paper-200 dark:bg-primary-900/20 rounded-full blur-[100px] opacity-60"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-stone-200 dark:bg-primary-800/10 rounded-full blur-[100px] opacity-60"></div>
+      </div>
+
+      <div className="max-w-md w-full space-y-10 relative z-10">
+        <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <h1 className="text-4xl font-black tracking-tight text-primary-800 dark:text-primary-50 mb-4">
             Bible Soom
           </h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-300">
-            로그인하여 말씀을 기록하세요
+          <p className="text-stone-500 dark:text-primary-300 font-bold">
+            말씀의 흐름 속으로 다시 들어오세요
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
+        <div className="bg-white/80 dark:bg-primary-900/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-primary-900/5 p-10 border border-white/50 dark:border-primary-800 animate-in fade-in slide-in-from-bottom-8 duration-1000">
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2"
+                className="block text-xs font-black uppercase tracking-widest text-stone-400 dark:text-primary-400 mb-3 ml-1"
               >
-                이메일
+                이메일 주소
               </label>
               <input
                 id="email"
@@ -61,7 +67,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-5 py-4 rounded-2xl border border-stone-200 dark:border-primary-800 bg-paper-50 dark:bg-primary-950 text-primary-900 dark:text-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium placeholder-stone-400 dark:placeholder-primary-700"
                 placeholder="example@email.com"
               />
             </div>
@@ -69,7 +75,7 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2"
+                className="block text-xs font-black uppercase tracking-widest text-stone-400 dark:text-primary-400 mb-3 ml-1"
               >
                 비밀번호
               </label>
@@ -79,13 +85,13 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-5 py-4 rounded-2xl border border-stone-200 dark:border-primary-800 bg-paper-50 dark:bg-primary-950 text-primary-900 dark:text-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium placeholder-stone-400 dark:placeholder-primary-700"
                 placeholder="••••••••"
               />
             </div>
 
             {error && (
-              <div className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+              <div className="text-red-600 dark:text-red-400 text-xs font-bold bg-red-50 dark:bg-red-900/20 p-4 rounded-2xl border border-red-100 dark:border-red-900/30 animate-shake">
                 {error}
               </div>
             )}
@@ -93,32 +99,45 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-semibold rounded-lg transition-colors"
+              className="group w-full py-4 px-6 bg-primary-600 hover:bg-primary-700 disabled:bg-stone-300 dark:disabled:bg-primary-800 text-white font-black rounded-2xl shadow-xl shadow-primary-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              {loading ? "로그인 중..." : "로그인"}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  로그인 중...
+                </span>
+              ) : (
+                <>
+                  로그인하기
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </>
+              )}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-slate-600 dark:text-slate-400">
+          <div className="mt-8 text-center">
+            <p className="text-stone-500 dark:text-primary-400 text-sm font-bold">
               계정이 없으신가요?{" "}
               <a
                 href="/signup"
-                className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                className="text-primary-600 dark:text-primary-300 hover:underline"
               >
                 회원가입
               </a>
             </p>
           </div>
+        </div>
 
-          <div className="mt-4 text-center">
-            <a
-              href="/"
-              className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-sm"
-            >
-              ← 홈으로 돌아가기
-            </a>
-          </div>
+        <div className="text-center">
+          <a
+            href="/"
+            className="text-stone-400 dark:text-primary-500 hover:text-stone-600 dark:hover:text-primary-300 text-sm font-bold transition-colors"
+          >
+            ← 홈으로 돌아가기
+          </a>
         </div>
       </div>
     </div>

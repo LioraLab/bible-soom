@@ -10,7 +10,19 @@ interface Book {
   name: string;
   testament: Testament;
   chapters: number;
+  book_order: number;
 }
+
+// 성경 분류 정의
+const CATEGORIES = [
+  { id: 'law', name: '율법서', range: [1, 5], testament: 'OT' },
+  { id: 'history_ot', name: '역사서', range: [6, 17], testament: 'OT' },
+  { id: 'poetry', name: '시가서', range: [18, 22], testament: 'OT' },
+  { id: 'prophets', name: '선지서', range: [23, 39], testament: 'OT' },
+  { id: 'gospels', name: '복음서 & 역사서', range: [40, 44], testament: 'NT' },
+  { id: 'epistles', name: '서신서', range: [45, 65], testament: 'NT' },
+  { id: 'prophecy', name: '예언서', range: [66, 66], testament: 'NT' },
+];
 
 export default function BooksClient() {
   const [testament, setTestament] = useState<Testament>("OT");
@@ -36,121 +48,201 @@ export default function BooksClient() {
     fetchBooks();
   }, [testament]);
 
-  return (
-    <main className="mx-auto max-w-6xl py-8 px-4">
-      <header className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">성경 목록</h1>
-          <a
-            href="/"
-            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-sm"
-          >
-            ← 홈으로
-          </a>
-        </div>
+  // 현재 선택된 구약/신약에 맞는 카테고리 필터링
+  const currentCategories = CATEGORIES.filter(c => c.testament === testament);
 
-        {/* 번역본 선택 */}
-        <div className="mb-6">
-          <label className="text-sm text-slate-600 dark:text-slate-400 mb-2 block">
-            번역본 선택
-          </label>
-          <div className="flex gap-2 flex-wrap">
-            {translations.map((t) => (
+  // 책을 카테고리별로 그룹화
+  const getBooksByCategory = (category: typeof CATEGORIES[0]) => {
+    return books.filter(b => b.book_order >= category.range[0] && b.book_order <= category.range[1]);
+  };
+
+  return (
+    <div className="min-h-screen bg-paper-50 dark:bg-primary-950 transition-colors duration-500">
+      <main className="mx-auto max-w-7xl px-6 py-12">
+        {/* 헤더 영역 */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+          <div className="space-y-4">
+            <h1 className="text-5xl font-black text-primary-900 dark:text-primary-50 tracking-tight">
+              Scripture Library
+            </h1>
+            <p className="text-stone-500 dark:text-primary-300 font-medium text-lg">
+              말씀의 숲에서 당신에게 필요한 책을 꺼내보세요
+            </p>
+          </div>
+          
+          <div className="flex gap-3">
+             {/* 구약/신약 토글 */}
+            <div className="flex p-1.5 bg-white dark:bg-primary-900 rounded-[1.25rem] border border-stone-200 dark:border-primary-800 shadow-sm">
+              <button
+                onClick={() => setTestament("OT")}
+                className={`px-6 py-3 text-sm font-black rounded-2xl transition-all duration-300 ${
+                  testament === "OT"
+                    ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
+                    : "text-stone-500 dark:text-primary-400 hover:text-stone-800 dark:hover:text-primary-200"
+                }`}
+              >
+                Old Testament
+              </button>
+              <button
+                onClick={() => setTestament("NT")}
+                className={`px-6 py-3 text-sm font-black rounded-2xl transition-all duration-300 ${
+                  testament === "NT"
+                    ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
+                    : "text-stone-500 dark:text-primary-400 hover:text-stone-800 dark:hover:text-primary-200"
+                }`}
+              >
+                New Testament
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* 번역본 선택 (작게 배치) */}
+        <div className="mb-12 flex justify-end">
+           <div className="inline-flex items-center gap-2 px-4 py-2 bg-paper-100 dark:bg-primary-900/50 rounded-2xl border border-stone-200 dark:border-primary-800">
+            <span className="text-xs font-black uppercase tracking-wider text-stone-400 dark:text-primary-400 mr-2">Version</span>
+            {TRANSLATIONS.map((t) => (
               <button
                 key={t.code}
                 onClick={() => t.available && setTranslation(t.code)}
                 disabled={!t.available}
-                className={`px-4 py-2 text-sm rounded-lg transition-all ${
+                className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
                   t.code === translation
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-primary-600 text-white"
                     : t.available
-                    ? "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600"
-                    : "bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                    ? "text-stone-500 dark:text-primary-300 hover:bg-stone-200 dark:hover:bg-primary-800"
+                    : "text-stone-300 dark:text-primary-700 cursor-not-allowed"
                 }`}
               >
                 {t.name}
-                {!t.available && <span className="ml-1 text-xs">(준비중)</span>}
               </button>
             ))}
           </div>
         </div>
 
-        {/* 구약/신약 탭 */}
-        <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700">
-          <button
-            onClick={() => setTestament("OT")}
-            className={`px-6 py-3 font-semibold transition-all ${
-              testament === "OT"
-                ? "border-b-2 border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-            }`}
-          >
-            📖 구약 (39권)
-          </button>
-          <button
-            onClick={() => setTestament("NT")}
-            className={`px-6 py-3 font-semibold transition-all ${
-              testament === "NT"
-                ? "border-b-2 border-indigo-600 dark:border-indigo-400 text-indigo-600 dark:text-indigo-400"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-            }`}
-          >
-            ✝️ 신약 (27권)
-          </button>
-        </div>
-      </header>
-
-      {loading ? (
-        <div className="text-center py-12 text-slate-500 dark:text-slate-400">로딩 중...</div>
-      ) : selectedBook ? (
-        /* 장 선택 화면 */
-        <div>
-          <button
-            onClick={() => setSelectedBook(null)}
-            className="mb-6 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-2"
-          >
-            ← 책 목록으로
-          </button>
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6">
-            {selectedBook.name} - 장 선택
-          </h2>
-          <div className="grid gap-3 grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12">
-            {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map((chapterNum) => (
-              <a
-                key={chapterNum}
-                href={`/bible/${translation}/${encodeURIComponent(selectedBook.name)}/${chapterNum}`}
-                className="flex items-center justify-center h-12 rounded-lg border-2 border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:border-indigo-400 dark:hover:border-indigo-600 transition-all text-slate-800 dark:text-slate-100 font-medium"
-              >
-                {chapterNum}
-              </a>
+        {loading ? (
+           <div className="space-y-12">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="space-y-4">
+                <div className="h-8 w-32 bg-stone-200 dark:bg-primary-900 rounded-lg animate-pulse" />
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map((j) => (
+                    <div key={j} className="h-40 bg-stone-100 dark:bg-primary-900 rounded-[2rem] animate-pulse" />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-      ) : (
-        /* 책 목록 화면 */
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {books.map((book) => (
-            <button
-              key={book.id}
-              onClick={() => setSelectedBook(book)}
-              className="block rounded-lg border-2 border-slate-200 dark:border-slate-700 p-4 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:border-indigo-400 dark:hover:border-indigo-600 transition-all text-left"
-            >
-              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-                {book.name}
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                {book.chapters}장
-              </p>
-            </button>
-          ))}
-        </div>
-      )}
+        ) : (
+          <div className="space-y-20">
+            {currentCategories.map((category) => {
+              const categoryBooks = getBooksByCategory(category);
+              if (categoryBooks.length === 0) return null;
 
-      {!loading && books.length === 0 && !selectedBook && (
-        <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-          성경 목록이 없습니다.
-        </div>
-      )}
-    </main>
+              return (
+                <section key={category.id} className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+                  <div className="flex items-center gap-4 mb-8">
+                    <h2 className="text-2xl font-black text-primary-900 dark:text-primary-50">{category.name}</h2>
+                    <div className="h-px flex-1 bg-stone-200 dark:bg-primary-800"></div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {categoryBooks.map((book) => (
+                      <button
+                        key={book.id}
+                        onClick={() => setSelectedBook(book)}
+                        className="group relative flex flex-col items-start p-8 h-48 rounded-[2rem] bg-white dark:bg-primary-900 border border-stone-100 dark:border-primary-800 hover:border-primary-200 dark:hover:border-primary-600 shadow-sm hover:shadow-xl hover:shadow-primary-900/5 transition-all duration-300 overflow-hidden text-left w-full"
+                      >
+                         {/* 배경 장식 (책 표지 느낌) */}
+                         <div className="absolute right-0 top-0 w-32 h-32 bg-gradient-to-br from-paper-100 to-transparent dark:from-primary-800 dark:to-transparent rounded-bl-[4rem] opacity-50 group-hover:scale-110 transition-transform duration-500"></div>
+                         
+                         <span className="relative z-10 text-xs font-black text-stone-400 dark:text-primary-400 mb-auto">
+                           NO. {String(book.book_order).padStart(2, '0')}
+                         </span>
+                         
+                         <div className="relative z-10">
+                           <h3 className="text-xl font-black text-primary-800 dark:text-primary-50 mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-300 transition-colors">
+                             {book.name}
+                           </h3>
+                           <p className="text-sm font-bold text-stone-400 dark:text-primary-400">
+                             {book.chapters} Chapters
+                           </p>
+                         </div>
+
+                         {/* 화살표 아이콘 */}
+                         <div className="absolute bottom-8 right-8 w-8 h-8 rounded-full bg-primary-50 dark:bg-primary-800 flex items-center justify-center text-primary-600 dark:text-primary-300 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                           →
+                         </div>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
+      </main>
+
+      {/* 장 선택 Drawer (오른쪽 슬라이드 패널) */}
+      {/* 배경 오버레이 */}
+      <div 
+        className={`fixed inset-0 bg-primary-950/20 dark:bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+          selectedBook ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setSelectedBook(null)}
+      />
+
+      {/* 슬라이드 패널 */}
+      <div 
+        className={`fixed top-0 right-0 h-full w-full sm:w-[480px] bg-white dark:bg-primary-950 shadow-2xl z-50 transform transition-transform duration-500 ease-out-expo ${
+          selectedBook ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {selectedBook && (
+          <div className="h-full flex flex-col p-8 sm:p-10">
+            {/* Drawer 헤더 */}
+            <div className="flex items-start justify-between mb-10">
+              <div>
+                <p className="text-sm font-bold text-primary-500 mb-2">Chapter Selection</p>
+                <h2 className="text-4xl font-black text-primary-900 dark:text-primary-50">
+                  {selectedBook.name}
+                </h2>
+              </div>
+              <button 
+                onClick={() => setSelectedBook(null)}
+                className="p-2 rounded-full hover:bg-stone-100 dark:hover:bg-primary-800 text-stone-400 dark:text-primary-400 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 장 목록 그리드 */}
+            <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map((chapterNum) => (
+                  <a
+                    key={chapterNum}
+                    href={`/bible/${translation}/${encodeURIComponent(selectedBook.name)}/${chapterNum}`}
+                    className="aspect-square flex flex-col items-center justify-center rounded-2xl border border-stone-200 dark:border-primary-800 bg-paper-50 dark:bg-primary-900 text-primary-800 dark:text-primary-100 font-black text-lg hover:bg-primary-600 hover:text-white hover:border-primary-600 hover:shadow-lg hover:shadow-primary-500/30 hover:scale-105 transition-all duration-200"
+                  >
+                    {chapterNum}
+                    <span className="text-[10px] font-medium opacity-40 mt-0.5">장</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* 하단 장식 */}
+            <div className="mt-8 pt-8 border-t border-stone-100 dark:border-primary-900">
+               <p className="text-center text-xs font-bold text-stone-300 dark:text-primary-600 uppercase tracking-widest">
+                 Bible Soom Library
+               </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
