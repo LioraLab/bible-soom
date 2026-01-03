@@ -159,16 +159,16 @@ export default function PassageClient({
         const bookmarksRes = await fetch("/api/v1/bookmarks");
         if (bookmarksRes.ok) {
           const bookmarksData = await bookmarksRes.json();
-          const ids = new Set(bookmarksData.bookmarks?.map((b: any) => b.verse_id) || []);
-          setBookmarkedVerseIds(ids);
+          const bookmarkIds = new Set(bookmarksData.bookmarks?.map((b: any) => b.verse_id) || []);
+          setBookmarkedVerseIds(bookmarkIds);
         }
 
         // 메모 가져오기
         const notesRes = await fetch("/api/v1/notes");
         if (notesRes.ok) {
           const notesData = await notesRes.json();
-          const ids = new Set(notesData.notes?.map((n: any) => n.verse_id) || []);
-          setNotedVerseIds(ids);
+          const noteIds = new Set(notesData.notes?.map((n: any) => n.verse_id) || []);
+          setNotedVerseIds(noteIds);
 
           // 메모 내용과 ID를 Map에 저장
           const contents = new Map<number, { id: number; content: string }>();
@@ -749,6 +749,7 @@ export default function PassageClient({
             {verses.map((v) => {
               const highlightColor = highlightedVerseIds.get(v.id);
               const hasHighlight = !!highlightColor;
+              const hasNote = notedVerseIds.has(v.id);
 
               return (
                 <div
@@ -827,6 +828,7 @@ export default function PassageClient({
           {verses.map((v) => {
           const highlightColor = highlightedVerseIds.get(v.id);
           const hasHighlight = !!highlightColor;
+          const hasNote = notedVerseIds.has(v.id);
 
           return (
             <div
@@ -906,14 +908,7 @@ export default function PassageClient({
 
               {contextMenu.showColorPicker && (
                 <div className="px-2 py-2 space-y-1">
-                  {[
-                    { name: "노란색", color: "yellow", class: "bg-yellow-400" },
-                    { name: "초록색", color: "green", class: "bg-green-400" },
-                    { name: "파란색", color: "blue", class: "bg-blue-400" },
-                    { name: "분홍색", color: "pink", class: "bg-pink-400" },
-                    { name: "보라색", color: "purple", class: "bg-purple-400" },
-                    { name: "주황색", color: "orange", class: "bg-orange-400" },
-                  ].map((item) => (
+                  {HIGHLIGHT_COLORS.map((item) => (
                     <button
                       key={item.color}
                       onClick={() => addHighlight(contextMenu.verse, item.color)}
