@@ -1,30 +1,13 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+
+import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useRouter } from "next/navigation";
 import RichTextEditor from "@/components/editor/rich-text-editor";
-import {
-  TRANSLATIONS,
-  BOOK_CHAPTERS,
-  FONT_SIZE_CLASSES,
-  HIGHLIGHT_BG_CLASSES,
-  HIGHLIGHT_COLORS,
-} from "@/lib/constants";
-
-type Verse = {
-  id: number;
-  text: string;
-  book: string;
-  chapter: number;
-  verse: number;
-};
-
-type ContextMenu = {
-  verse: Verse;
-  x: number;
-  y: number;
-  showColorPicker?: boolean;
-} | null;
+import { TRANSLATIONS } from "@/lib/constants";
+import PassageHeader, { BookInfo } from "./PassageHeader";
+import VerseDisplay, { Verse } from "./VerseDisplay";
+import HighlightModal, { ContextMenu } from "./HighlightModal";
 
 export default function PassageClient({
   translation,
@@ -37,14 +20,21 @@ export default function PassageClient({
   chapter: number;
   verses: Verse[];
 }) {
-  const [contextMenu, setContextMenu] = useState<ContextMenu>(null);
+  // 컨텍스트 메뉴 상태
+  const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
+
+  // 메모 관련 상태
   const [noteModal, setNoteModal] = useState<Verse | null>(null);
   const [note, setNote] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
+
+  // 하이라이트, 북마크, 메모 데이터 상태
   const [highlightedVerseIds, setHighlightedVerseIds] = useState<Map<number, string>>(new Map());
   const [bookmarkedVerseIds, setBookmarkedVerseIds] = useState<Set<number>>(new Set());
   const [notedVerseIds, setNotedVerseIds] = useState<Set<number>>(new Set());
   const [noteContents, setNoteContents] = useState<Map<number, { id: number; content: string }>>(new Map());
+
+  // 병렬 보기 상태
   const [isParallelView, setIsParallelView] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('isParallelView') === 'true';
@@ -58,32 +48,33 @@ export default function PassageClient({
     return 'NIV';
   });
   const [secondVerses, setSecondVerses] = useState<Verse[]>([]);
-  const [showBookSelector, setShowBookSelector] = useState(false);
-  const [availableBooks, setAvailableBooks] = useState<{ id: number; name: string; testament: string; chapters: number }[]>([]);
-  const [showFontSizeMenu, setShowFontSizeMenu] = useState(false);
+
+  // 책 목록 상태
+  const [availableBooks, setAvailableBooks] = useState<BookInfo[]>([]);
+
+  // 글자 설정 상태
   const [fontSize, setFontSize] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('fontSize');
       return saved ? Number(saved) : 3;
     }
     return 3;
-  }); // 1~5, 기본값 3 (중간)
+  });
   const [fontWeight, setFontWeight] = useState<"normal" | "bold">(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('fontWeight') as "normal" | "bold") || "normal";
     }
     return "normal";
-  }); // 글자 굵기
+  });
+
+  // 책갈피 상태
   const [isChapterBookmarked, setIsChapterBookmarked] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const bookSelectorRef = useRef<HTMLDivElement>(null);
-  const fontSizeMenuRef = useRef<HTMLDivElement>(null);
+
   const { user } = useAuth();
   const router = useRouter();
 
   // URL 디코딩
   const decodedBook = decodeURIComponent(book);
-  const [selectedBookForNav, setSelectedBookForNav] = useState(decodedBook);
 
   // 책 목록 가져오기
   useEffect(() => {
@@ -140,7 +131,7 @@ export default function PassageClient({
 
   // 하이라이트, 북마크, 메모 목록 가져오기
   useEffect(() => {
-    if (!user) return; // 로그인하지 않으면 가져오지 않음
+    if (!user) return;
 
     async function fetchUserData() {
       try {
@@ -149,7 +140,7 @@ export default function PassageClient({
         if (highlightsRes.ok) {
           const highlightsData = await highlightsRes.json();
           const highlightMap = new Map<number, string>();
-          highlightsData.highlights?.forEach((h: any) => {
+          highlightsData.highlights?.forEach((h: { verse_id: number; color?: string }) => {
             highlightMap.set(h.verse_id, h.color || "yellow");
           });
           setHighlightedVerseIds(highlightMap);
@@ -159,7 +150,7 @@ export default function PassageClient({
         const bookmarksRes = await fetch("/api/v1/bookmarks");
         if (bookmarksRes.ok) {
           const bookmarksData = await bookmarksRes.json();
-          const bookmarkIds = new Set(bookmarksData.bookmarks?.map((b: any) => b.verse_id) || []);
+          const bookmarkIds = new Set<number>(bookmarksData.bookmarks?.map((b: { verse_id: number }) => b.verse_id) || []);
           setBookmarkedVerseIds(bookmarkIds);
         }
 
@@ -167,12 +158,12 @@ export default function PassageClient({
         const notesRes = await fetch("/api/v1/notes");
         if (notesRes.ok) {
           const notesData = await notesRes.json();
-          const noteIds = new Set(notesData.notes?.map((n: any) => n.verse_id) || []);
+          const noteIds = new Set<number>(notesData.notes?.map((n: { verse_id: number }) => n.verse_id) || []);
           setNotedVerseIds(noteIds);
 
           // 메모 내용과 ID를 Map에 저장
           const contents = new Map<number, { id: number; content: string }>();
-          notesData.notes?.forEach((n: any) => {
+          notesData.notes?.forEach((n: { verse_id: number; id: number; content: string }) => {
             contents.set(n.verse_id, { id: n.id, content: n.content });
           });
           setNoteContents(contents);
@@ -184,48 +175,6 @@ export default function PassageClient({
 
     fetchUserData();
   }, [user]);
-
-  // 컨텍스트 메뉴 외부 클릭 시 닫기
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setContextMenu(null);
-      }
-    }
-
-    if (contextMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [contextMenu]);
-
-  // 책 선택 드롭다운 외부 클릭 시 닫기
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (bookSelectorRef.current && !bookSelectorRef.current.contains(event.target as Node)) {
-        setShowBookSelector(false);
-      }
-    }
-
-    if (showBookSelector) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [showBookSelector]);
-
-  // 글자 크기 메뉴 외부 클릭 시 닫기
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (fontSizeMenuRef.current && !fontSizeMenuRef.current.contains(event.target as Node)) {
-        setShowFontSizeMenu(false);
-      }
-    }
-
-    if (showFontSizeMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [showFontSizeMenu]);
 
   // 구절 클릭 핸들러
   function handleVerseClick(event: React.MouseEvent, verse: Verse) {
@@ -246,6 +195,7 @@ export default function PassageClient({
     });
   }
 
+  // 하이라이트 추가
   async function addHighlight(v: Verse, color: string) {
     const res = await fetch("/api/v1/highlights", {
       method: "POST",
@@ -263,6 +213,7 @@ export default function PassageClient({
     setContextMenu(null);
   }
 
+  // 하이라이트 제거
   async function removeHighlight(v: Verse) {
     const res = await fetch("/api/v1/highlights", {
       method: "DELETE",
@@ -280,6 +231,7 @@ export default function PassageClient({
     setContextMenu(null);
   }
 
+  // 색상 선택기 토글
   function toggleColorPicker() {
     setContextMenu((prev) => {
       if (!prev) return null;
@@ -290,56 +242,26 @@ export default function PassageClient({
     });
   }
 
-  async function toggleBookmark(v: Verse) {
-    const isBookmarked = bookmarkedVerseIds.has(v.id);
-
-    if (isBookmarked) {
-      // 북마크 삭제
-      const res = await fetch("/api/v1/bookmarks", {
-        method: "DELETE",
-        body: JSON.stringify({ verseId: v.id }),
-        headers: { "Content-Type": "application/json" },
-      });
-      if (res.ok) {
-        setBookmarkedVerseIds((prev) => {
-          const next = new Set(prev);
-          next.delete(v.id);
-          return next;
-        });
-        alert("북마크가 삭제되었습니다!");
-      }
-    } else {
-      // 북마크 추가
-      const res = await fetch("/api/v1/bookmarks", {
-        method: "POST",
-        body: JSON.stringify({ verseId: v.id }),
-        headers: { "Content-Type": "application/json" },
-      });
-      if (res.ok) {
-        setBookmarkedVerseIds((prev) => new Set(prev).add(v.id));
-        alert("북마크가 추가되었습니다!");
-      }
-    }
+  // 컨텍스트 메뉴 닫기
+  function closeContextMenu() {
     setContextMenu(null);
   }
 
+  // 메모 모달 열기
   function openNoteModal(v: Verse) {
-    // 기존 메모가 있으면 불러오기
     const existingNote = noteContents.get(v.id)?.content || "";
     setNote(existingNote);
-
-    // 메모가 있으면 보기 모드, 없으면 편집 모드
     setIsEditMode(existingNote === "");
     setNoteModal(v);
     setContextMenu(null);
   }
 
+  // 메모 저장
   async function saveNote() {
     if (!noteModal) return;
 
     const existingNote = noteContents.get(noteModal.id);
 
-    // 메모가 이미 있으면 PUT, 없으면 POST
     const res = existingNote
       ? await fetch(`/api/v1/notes/${existingNote.id}`, {
           method: "PUT",
@@ -358,7 +280,6 @@ export default function PassageClient({
     if (res.ok) {
       const data = await res.json();
       setNotedVerseIds((prev) => new Set(prev).add(noteModal.id));
-      // 메모 내용과 ID를 Map 업데이트
       setNoteContents((prev) => {
         const next = new Map(prev);
         next.set(noteModal.id, {
@@ -368,7 +289,6 @@ export default function PassageClient({
         return next;
       });
       alert("메모가 저장되었습니다!");
-      // 모달 닫기
       setNote("");
       setNoteModal(null);
       setIsEditMode(false);
@@ -378,16 +298,19 @@ export default function PassageClient({
     }
   }
 
+  // 메모 모달 닫기
   function closeNoteModal() {
     setNote("");
     setNoteModal(null);
     setIsEditMode(false);
   }
 
+  // 편집 모드 진입
   function enterEditMode() {
     setIsEditMode(true);
   }
 
+  // 메모 삭제
   async function deleteNote() {
     if (!noteModal) return;
     const noteData = noteContents.get(noteModal.id);
@@ -415,13 +338,19 @@ export default function PassageClient({
     }
   }
 
-  const currentTranslation = TRANSLATIONS.find((t) => t.code === translation) || TRANSLATIONS[0];
-
+  // 번역본 변경 핸들러
   function handleTranslationChange(newTranslation: string) {
     const encodedBook = encodeURIComponent(decodedBook);
     router.push(`/bible/${newTranslation}/${encodedBook}/${chapter}`);
   }
 
+  // 두 번째 번역본 변경 핸들러
+  function handleSecondTranslationChange(newTranslation: string, isParallel: boolean) {
+    setSecondTranslation(newTranslation);
+    setIsParallelView(isParallel);
+  }
+
+  // 이전 장으로 이동
   function goToPreviousChapter() {
     const encodedBook = encodeURIComponent(decodedBook);
     const prevChapter = chapter - 1;
@@ -430,31 +359,31 @@ export default function PassageClient({
     }
   }
 
+  // 다음 장으로 이동
   function goToNextChapter() {
     const encodedBook = encodeURIComponent(decodedBook);
     const nextChapter = chapter + 1;
     router.push(`/bible/${translation}/${encodedBook}/${nextChapter}`);
   }
 
+  // 책/장 선택 핸들러
   function handleBookChapterSelect(selectedBook: string, selectedChapter: number) {
     const encodedBook = encodeURIComponent(selectedBook);
     router.push(`/bible/${translation}/${encodedBook}/${selectedChapter}`);
-    setShowBookSelector(false);
   }
 
+  // 책갈피 토글
   function toggleChapterBookmark() {
     if (typeof window !== 'undefined') {
       const bookmarks = JSON.parse(localStorage.getItem('chapterBookmarks') || '[]');
       const key = `${decodedBook}-${chapter}`;
 
       if (isChapterBookmarked) {
-        // 북마크 해제
         const updated = bookmarks.filter((b: string) => b !== key);
         localStorage.setItem('chapterBookmarks', JSON.stringify(updated));
         setIsChapterBookmarked(false);
         alert('책갈피가 해제되었습니다!');
       } else {
-        // 북마크 추가
         bookmarks.push(key);
         localStorage.setItem('chapterBookmarks', JSON.stringify(bookmarks));
         setIsChapterBookmarked(true);
@@ -463,279 +392,29 @@ export default function PassageClient({
     }
   }
 
-  // 글자 크기에 따른 클래스 매핑
-  const getFontSizeClass = (size: number) => {
-    return FONT_SIZE_CLASSES[size] || "text-lg";
-  };
-
-  // 하이라이트 배경색 클래스 매핑
-  const getBackgroundColorClass = (color: string) => {
-    return HIGHLIGHT_BG_CLASSES[color] || "bg-yellow-200 dark:bg-yellow-500/30";
-  };
-
   return (
     <div className="mx-auto max-w-7xl px-2 sm:px-4 py-8 space-y-6 relative">
-      {/* 이전 장 버튼 */}
-      {chapter > 1 && (
-        <button
-          onClick={goToPreviousChapter}
-          className="fixed left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center z-10"
-          aria-label="이전 장"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            className="w-6 h-6 text-slate-600 dark:text-slate-300"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
-        </button>
-      )}
-
-      {/* 다음 장 버튼 */}
-      {(() => {
-        const currentBook = availableBooks.find(b => b.name === decodedBook);
-        const maxChapter = currentBook?.chapters || BOOK_CHAPTERS[decodedBook] || 0;
-        const hasNextChapter = chapter < maxChapter;
-
-        return hasNextChapter && (
-          <button
-            onClick={goToNextChapter}
-            className="fixed right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center z-10"
-            aria-label="다음 장"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-              className="w-6 h-6 text-slate-600 dark:text-slate-300"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-          </button>
-        );
-      })()}
-      {/* 상단 네비게이션 박스 */}
-      <div className="flex flex-wrap items-center gap-3 mb-6 px-40 py-4 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900">
-        {/* 책/장 선택 드롭다운 */}
-        <div className="relative" ref={bookSelectorRef}>
-          <button
-            onClick={() => setShowBookSelector(!showBookSelector)}
-            className="px-4 py-2 pr-10 bg-white dark:bg-slate-800 rounded-full border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all min-w-[140px] relative"
-          >
-            <span>{decodedBook} {chapter}장</span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </button>
-
-          {/* 책/장 선택 드롭다운 메뉴 */}
-          {showBookSelector && (
-            <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-50 w-[400px] max-h-[400px] overflow-hidden">
-              <div className="grid grid-cols-2">
-                {/* 왼쪽: 성경 목록 */}
-                <div className="border-r border-slate-200 dark:border-slate-700">
-                  <div className="bg-slate-100 dark:bg-slate-900 px-4 py-2 font-semibold text-slate-700 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700">
-                    성경 목록
-                  </div>
-                  <div className="overflow-y-auto max-h-[350px]">
-                    {availableBooks.map((book) => (
-                      <button
-                        key={book.id}
-                        onClick={() => setSelectedBookForNav(book.name)}
-                        className={`w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
-                          selectedBookForNav === book.name
-                            ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-semibold"
-                            : "text-slate-700 dark:text-slate-200"
-                        }`}
-                      >
-                        {book.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 오른쪽: 장 */}
-                <div>
-                  <div className="bg-slate-100 dark:bg-slate-900 px-4 py-2 font-semibold text-slate-700 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700">
-                    장
-                  </div>
-                  <div className="overflow-y-auto max-h-[350px]">
-                    {(() => {
-                      const selectedBook = availableBooks.find(b => b.name === selectedBookForNav);
-                      const chapterCount = selectedBook?.chapters || BOOK_CHAPTERS[selectedBookForNav] || 0;
-
-                      return Array.from({ length: chapterCount }, (_, i) => i + 1).map((chapterNum) => (
-                        <button
-                          key={chapterNum}
-                          onClick={() => handleBookChapterSelect(selectedBookForNav, chapterNum)}
-                          className={`w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
-                            selectedBookForNav === decodedBook && chapterNum === chapter
-                              ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-semibold"
-                              : "text-slate-700 dark:text-slate-200"
-                          }`}
-                        >
-                          {chapterNum}장
-                        </button>
-                      ));
-                    })()}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 구분선 */}
-        <div className="h-8 w-px bg-slate-300 dark:bg-slate-600"></div>
-
-        {/* 첫 번째 번역본 선택 */}
-        <div className="relative">
-          <select
-            value={translation}
-            onChange={(e) => handleTranslationChange(e.target.value)}
-            className="px-4 py-2 pr-10 bg-white dark:bg-slate-800 rounded-full border-2 border-slate-300 dark:border-slate-700 text-black dark:text-slate-100 outline-none cursor-pointer appearance-none"
-          >
-            {TRANSLATIONS.map((t) => (
-              <option key={t.code} value={t.code} disabled={!t.available}>
-                {t.name} {!t.available ? '(준비중)' : ''}
-              </option>
-            ))}
-          </select>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-black dark:text-slate-100">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-          </svg>
-        </div>
-
-        {/* 두 번째 번역본 선택 (병렬 보기용) */}
-        <div className="relative">
-          <select
-            value={isParallelView ? secondTranslation : ""}
-            onChange={(e) => {
-              if (e.target.value) {
-                setSecondTranslation(e.target.value);
-                setIsParallelView(true);
-              } else {
-                setIsParallelView(false);
-              }
-            }}
-            className="px-4 py-2 pr-10 bg-white dark:bg-slate-800 rounded-full border-2 border-slate-300 dark:border-slate-700 text-black dark:text-slate-100 outline-none cursor-pointer appearance-none"
-          >
-            <option value="">번역본 선택</option>
-            {TRANSLATIONS.filter(t => t.code !== translation).map((t) => (
-              <option key={t.code} value={t.code} disabled={!t.available}>
-                {t.name} {!t.available ? '(준비중)' : ''}
-              </option>
-            ))}
-          </select>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-black dark:text-slate-100">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-          </svg>
-        </div>
-
-        {/* 병렬 보기 해제 버튼 */}
-        {isParallelView && (
-          <button
-            onClick={() => setIsParallelView(false)}
-            className="px-3 py-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-all text-sm"
-          >
-            ✕ 병렬보기 해제
-          </button>
-        )}
-
-        <div className="flex-1"></div>
-
-        {/* 글자 크기 설정 버튼 */}
-        <div className="relative" ref={fontSizeMenuRef}>
-          <button
-            onClick={() => setShowFontSizeMenu(!showFontSizeMenu)}
-            className="w-10 h-10 rounded-full border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all relative"
-          >
-            <span className="text-xs translate-y-0.5">가</span>
-            <span className="text-base font-bold -translate-y-0.5">가</span>
-          </button>
-
-          {/* 글자 크기 설정 메뉴 */}
-          {showFontSizeMenu && (
-            <div className="absolute top-full right-0 mt-2 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-50 w-[300px] p-4">
-              {/* 글자 크기 */}
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">글자 크기</h3>
-                <div className="grid grid-cols-5 gap-2">
-                  {[1, 2, 3, 4, 5].map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setFontSize(size)}
-                      className={`py-2 rounded-lg transition-all ${
-                        fontSize === size
-                          ? "bg-indigo-600 text-white"
-                          : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600"
-                      }`}
-                      style={{ fontSize: `${10 + size * 2}px` }}
-                    >
-                      가
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 글자 굵기 */}
-              <div>
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">글자 굵기</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setFontWeight("normal")}
-                    className={`py-2 rounded-lg transition-all ${
-                      fontWeight === "normal"
-                        ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600"
-                    }`}
-                  >
-                    보통
-                  </button>
-                  <button
-                    onClick={() => setFontWeight("bold")}
-                    className={`py-2 rounded-lg transition-all font-bold ${
-                      fontWeight === "bold"
-                        ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600"
-                    }`}
-                  >
-                    굵게
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 책갈피 버튼 */}
-        <button
-          onClick={toggleChapterBookmark}
-          className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
-            isChapterBookmarked
-              ? "bg-indigo-600 border-indigo-600 hover:bg-indigo-700 hover:border-indigo-700"
-              : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"
-          }`}
-          title={isChapterBookmarked ? "책갈피 해제" : "책갈피 추가"}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill={isChapterBookmarked ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth={2}
-            className={`w-5 h-5 ${isChapterBookmarked ? "text-white" : "text-slate-700 dark:text-slate-200"}`}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
-          </svg>
-        </button>
-      </div>
+      {/* 헤더 컴포넌트 */}
+      <PassageHeader
+        book={decodedBook}
+        chapter={chapter}
+        translation={translation}
+        isParallelView={isParallelView}
+        secondTranslation={secondTranslation}
+        availableBooks={availableBooks}
+        fontSize={fontSize}
+        fontWeight={fontWeight}
+        isChapterBookmarked={isChapterBookmarked}
+        onTranslationChange={handleTranslationChange}
+        onSecondTranslationChange={handleSecondTranslationChange}
+        onParallelViewClose={() => setIsParallelView(false)}
+        onFontSizeChange={setFontSize}
+        onFontWeightChange={setFontWeight}
+        onChapterBookmarkToggle={toggleChapterBookmark}
+        onNavigatePrevious={goToPreviousChapter}
+        onNavigateNext={goToNextChapter}
+        onBookChapterSelect={handleBookChapterSelect}
+      />
 
       {/* 구절 표시 영역 */}
       {isParallelView ? (
@@ -746,50 +425,18 @@ export default function PassageClient({
             <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 py-4">
               {decodedBook} {chapter}장 [{TRANSLATIONS.find(t => t.code === translation)?.name}]
             </h2>
-            {verses.map((v) => {
-              const highlightColor = highlightedVerseIds.get(v.id);
-              const hasHighlight = !!highlightColor;
-              const hasNote = notedVerseIds.has(v.id);
-
-              return (
-                <div
-                  key={v.id}
-                  onClick={(e) => handleVerseClick(e, v)}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer relative"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="font-semibold text-slate-600 dark:text-slate-400 text-sm min-w-[2rem]">
-                      {v.verse}
-                    </span>
-                    <div className={`leading-relaxed flex-1 text-slate-800 dark:text-slate-200 ${getFontSizeClass(fontSize)} ${fontWeight === "bold" ? "font-bold" : "font-normal"}`}>
-                      <span
-                        className={
-                          hasHighlight
-                            ? `${getBackgroundColorClass(highlightColor)} px-1 py-0.5 rounded`
-                            : ""
-                        }
-                      >
-                        {v.text}
-                      </span>
-                      {hasNote && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openNoteModal(v);
-                          }}
-                          className="ml-2 inline-flex items-center justify-center w-6 h-6 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all align-middle"
-                          title="메모 보기"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-600 dark:text-slate-400">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {verses.map((v) => (
+              <VerseDisplay
+                key={v.id}
+                verse={v}
+                highlightColor={highlightedVerseIds.get(v.id)}
+                hasNote={notedVerseIds.has(v.id)}
+                fontSize={fontSize}
+                fontWeight={fontWeight}
+                onVerseClick={handleVerseClick}
+                onNoteClick={(e, verse) => openNoteModal(verse)}
+              />
+            ))}
           </div>
 
           {/* 두 번째 번역본 */}
@@ -798,19 +445,16 @@ export default function PassageClient({
               {decodedBook} {chapter}장 [{TRANSLATIONS.find(t => t.code === secondTranslation)?.name}]
             </h2>
             {secondVerses.map((v) => (
-              <div
+              <VerseDisplay
                 key={v.id}
-                className="rounded-lg border border-slate-200 dark:border-slate-700 p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="font-semibold text-slate-600 dark:text-slate-400 text-sm min-w-[2rem]">
-                    {v.verse}
-                  </span>
-                  <div className={`leading-relaxed flex-1 text-slate-800 dark:text-slate-200 ${getFontSizeClass(fontSize)} ${fontWeight === "bold" ? "font-bold" : "font-normal"}`}>
-                    {v.text}
-                  </div>
-                </div>
-              </div>
+                verse={v}
+                hasNote={false}
+                fontSize={fontSize}
+                fontWeight={fontWeight}
+                onVerseClick={() => {}}
+                onNoteClick={() => {}}
+                isInteractive={false}
+              />
             ))}
           </div>
         </div>
@@ -825,115 +469,32 @@ export default function PassageClient({
               구절을 찾을 수 없습니다.
             </div>
           )}
-          {verses.map((v) => {
-          const highlightColor = highlightedVerseIds.get(v.id);
-          const hasHighlight = !!highlightColor;
-          const hasNote = notedVerseIds.has(v.id);
-
-          return (
-            <div
+          {verses.map((v) => (
+            <VerseDisplay
               key={v.id}
-              onClick={(e) => handleVerseClick(e, v)}
-              className="rounded-lg border border-slate-200 dark:border-slate-700 p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer relative"
-            >
-              <div className="flex items-start gap-3">
-                <span className="font-semibold text-slate-600 dark:text-slate-400 text-sm min-w-[2rem]">
-                  {v.verse}
-                </span>
-                <div className={`leading-relaxed flex-1 text-slate-800 dark:text-slate-200 ${getFontSizeClass(fontSize)} ${fontWeight === "bold" ? "font-bold" : "font-normal"}`}>
-                  <span
-                    className={
-                      hasHighlight
-                        ? `${getBackgroundColorClass(highlightColor)} px-1 py-0.5 rounded`
-                        : ""
-                    }
-                  >
-                    {v.text}
-                  </span>
-                  {hasNote && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openNoteModal(v);
-                      }}
-                      className="ml-2 inline-flex items-center justify-center w-6 h-6 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all align-middle"
-                      title="메모 보기"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-600 dark:text-slate-400">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-            </div>
-          );
-        })}
+              verse={v}
+              highlightColor={highlightedVerseIds.get(v.id)}
+              hasNote={notedVerseIds.has(v.id)}
+              fontSize={fontSize}
+              fontWeight={fontWeight}
+              onVerseClick={handleVerseClick}
+              onNoteClick={(e, verse) => openNoteModal(verse)}
+            />
+          ))}
         </div>
       )}
 
-      {/* 컨텍스트 메뉴 */}
-      {contextMenu && (
-        <div
-          ref={menuRef}
-          style={{
-            position: "fixed",
-            top: contextMenu.y,
-            left: contextMenu.x,
-            zIndex: 1000,
-          }}
-          className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-2 min-w-[160px]"
-        >
-          {highlightedVerseIds.has(contextMenu.verse.id) ? (
-            <button
-              onClick={() => removeHighlight(contextMenu.verse)}
-              className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-2"
-            >
-              <span className="text-amber-500">✨</span>
-              하이라이트 해제
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={toggleColorPicker}
-                className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-between gap-2"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-amber-500">✨</span>
-                  하이라이트
-                </div>
-                <span className="text-xs">{contextMenu.showColorPicker ? "▲" : "▼"}</span>
-              </button>
-
-              {contextMenu.showColorPicker && (
-                <div className="px-2 py-2 space-y-1">
-                  {HIGHLIGHT_COLORS.map((item) => (
-                    <button
-                      key={item.color}
-                      onClick={() => addHighlight(contextMenu.verse, item.color)}
-                      className="w-full px-3 py-1.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-2 rounded"
-                    >
-                      <span className={`w-4 h-4 rounded ${item.class}`}></span>
-                      {item.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          <button
-            onClick={() => openNoteModal(contextMenu.verse)}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center gap-2"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-600 dark:text-slate-400">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-            </svg>
-            {notedVerseIds.has(contextMenu.verse.id) ? "메모 보기" : "메모 작성"}
-          </button>
-        </div>
-      )}
+      {/* 하이라이트/컨텍스트 메뉴 모달 */}
+      <HighlightModal
+        contextMenu={contextMenu}
+        isHighlighted={contextMenu ? highlightedVerseIds.has(contextMenu.verse.id) : false}
+        hasNote={contextMenu ? notedVerseIds.has(contextMenu.verse.id) : false}
+        onClose={closeContextMenu}
+        onAddHighlight={addHighlight}
+        onRemoveHighlight={removeHighlight}
+        onToggleColorPicker={toggleColorPicker}
+        onOpenNote={openNoteModal}
+      />
 
       {/* 메모 모달 */}
       {noteModal && (
