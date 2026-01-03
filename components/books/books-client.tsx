@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TRANSLATIONS } from "@/lib/constants";
 
 type Testament = "OT" | "NT";
 
@@ -17,13 +18,6 @@ export default function BooksClient() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-
-  const translations = [
-    { code: "korHRV", name: "개역개정", available: true },
-    { code: "korRV", name: "개역한글", available: false },
-    { code: "korNRSV", name: "새번역", available: false },
-    { code: "NIV", name: "NIV2011", available: true },
-  ];
 
   useEffect(() => {
     async function fetchBooks() {

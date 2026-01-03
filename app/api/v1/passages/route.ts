@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-
-// 번역본 코드 → 컬럼명 매핑
-const TRANSLATION_COLUMNS: Record<string, string> = {
-  korHRV: "korhrv",
-  korRV: "korrv",
-  korNRSV: "kornrsv",
-  NIV: "niv",
-};
+import { TRANSLATION_COLUMNS } from "@/lib/constants";
 
 export async function GET(req: NextRequest) {
   const supabase = await createServerSupabase();

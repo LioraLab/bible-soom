@@ -3,6 +3,13 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useRouter } from "next/navigation";
 import RichTextEditor from "@/components/editor/rich-text-editor";
+import {
+  TRANSLATIONS,
+  BOOK_CHAPTERS,
+  FONT_SIZE_CLASSES,
+  HIGHLIGHT_BG_CLASSES,
+  HIGHLIGHT_COLORS,
+} from "@/lib/constants";
 
 type Verse = {
   id: number;
@@ -408,15 +415,7 @@ export default function PassageClient({
     }
   }
 
-  // 번역본 정보
-  const translations = [
-    { code: "korHRV", name: "개역개정", available: true },
-    { code: "korRV", name: "개역한글", available: false },
-    { code: "korNRSV", name: "새번역", available: false },
-    { code: "NIV", name: "NIV2011", available: true },
-  ];
-
-  const currentTranslation = translations.find((t) => t.code === translation) || translations[0];
+  const currentTranslation = TRANSLATIONS.find((t) => t.code === translation) || TRANSLATIONS[0];
 
   function handleTranslationChange(newTranslation: string) {
     const encodedBook = encodeURIComponent(decodedBook);
@@ -466,33 +465,12 @@ export default function PassageClient({
 
   // 글자 크기에 따른 클래스 매핑
   const getFontSizeClass = (size: number) => {
-    const sizeMap: Record<number, string> = {
-      1: "text-sm",
-      2: "text-base",
-      3: "text-lg",
-      4: "text-xl",
-      5: "text-2xl",
-    };
-    return sizeMap[size] || "text-lg";
+    return FONT_SIZE_CLASSES[size] || "text-lg";
   };
 
-  // 각 책의 장 개수 (간략화된 버전)
-  const bookChapters: Record<string, number> = {
-    "창세기": 50, "출애굽기": 40, "레위기": 27, "민수기": 36, "신명기": 34,
-    "여호수아": 24, "사사기": 21, "룻기": 4, "사무엘상": 31, "사무엘하": 24,
-    "열왕기상": 22, "열왕기하": 25, "역대상": 29, "역대하": 36, "에스라": 10,
-    "느헤미야": 13, "에스더": 10, "욥기": 42, "시편": 150, "잠언": 31,
-    "전도서": 12, "아가": 8, "이사야": 66, "예레미야": 52, "예레미야애가": 5,
-    "에스겔": 48, "다니엘": 12, "호세아": 14, "요엘": 3, "아모스": 9,
-    "오바댜": 1, "요나": 4, "미가": 7, "나훔": 3, "하박국": 3,
-    "스바냐": 3, "학개": 2, "스가랴": 14, "말라기": 4,
-    "마태복음": 28, "마가복음": 16, "누가복음": 24, "요한복음": 21,
-    "사도행전": 28, "로마서": 16, "고린도전서": 16, "고린도후서": 13,
-    "갈라디아서": 6, "에베소서": 6, "빌립보서": 4, "골로새서": 4,
-    "데살로니가전서": 5, "데살로니가후서": 3, "디모데전서": 6, "디모데후서": 4,
-    "디도서": 3, "빌레몬서": 1, "히브리서": 13, "야고보서": 5,
-    "베드로전서": 5, "베드로후서": 3, "요한1서": 5, "요한2서": 1,
-    "요한3서": 1, "유다서": 1, "요한계시록": 22
+  // 하이라이트 배경색 클래스 매핑
+  const getBackgroundColorClass = (color: string) => {
+    return HIGHLIGHT_BG_CLASSES[color] || "bg-yellow-200 dark:bg-yellow-500/30";
   };
 
   return (
@@ -520,7 +498,7 @@ export default function PassageClient({
       {/* 다음 장 버튼 */}
       {(() => {
         const currentBook = availableBooks.find(b => b.name === decodedBook);
-        const maxChapter = currentBook?.chapters || bookChapters[decodedBook] || 0;
+        const maxChapter = currentBook?.chapters || BOOK_CHAPTERS[decodedBook] || 0;
         const hasNextChapter = chapter < maxChapter;
 
         return hasNextChapter && (
@@ -590,7 +568,7 @@ export default function PassageClient({
                   <div className="overflow-y-auto max-h-[350px]">
                     {(() => {
                       const selectedBook = availableBooks.find(b => b.name === selectedBookForNav);
-                      const chapterCount = selectedBook?.chapters || bookChapters[selectedBookForNav] || 0;
+                      const chapterCount = selectedBook?.chapters || BOOK_CHAPTERS[selectedBookForNav] || 0;
 
                       return Array.from({ length: chapterCount }, (_, i) => i + 1).map((chapterNum) => (
                         <button
@@ -623,7 +601,7 @@ export default function PassageClient({
             onChange={(e) => handleTranslationChange(e.target.value)}
             className="px-4 py-2 pr-10 bg-white dark:bg-slate-800 rounded-full border-2 border-slate-300 dark:border-slate-700 text-black dark:text-slate-100 outline-none cursor-pointer appearance-none"
           >
-            {translations.map((t) => (
+            {TRANSLATIONS.map((t) => (
               <option key={t.code} value={t.code} disabled={!t.available}>
                 {t.name} {!t.available ? '(준비중)' : ''}
               </option>
@@ -649,7 +627,7 @@ export default function PassageClient({
             className="px-4 py-2 pr-10 bg-white dark:bg-slate-800 rounded-full border-2 border-slate-300 dark:border-slate-700 text-black dark:text-slate-100 outline-none cursor-pointer appearance-none"
           >
             <option value="">번역본 선택</option>
-            {translations.filter(t => t.code !== translation).map((t) => (
+            {TRANSLATIONS.filter(t => t.code !== translation).map((t) => (
               <option key={t.code} value={t.code} disabled={!t.available}>
                 {t.name} {!t.available ? '(준비중)' : ''}
               </option>
@@ -766,26 +744,11 @@ export default function PassageClient({
           {/* 첫 번째 번역본 */}
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 py-4">
-              {decodedBook} {chapter}장 [{translations.find(t => t.code === translation)?.name}]
+              {decodedBook} {chapter}장 [{TRANSLATIONS.find(t => t.code === translation)?.name}]
             </h2>
             {verses.map((v) => {
               const highlightColor = highlightedVerseIds.get(v.id);
               const hasHighlight = !!highlightColor;
-              const hasBookmark = bookmarkedVerseIds.has(v.id);
-              const hasNote = notedVerseIds.has(v.id);
-              const hasAnyMarker = hasHighlight || hasBookmark || hasNote;
-
-              const getBackgroundColorClass = (color: string) => {
-                const colorMap: Record<string, string> = {
-                  yellow: "bg-yellow-200 dark:bg-yellow-500/30",
-                  green: "bg-green-200 dark:bg-green-500/30",
-                  blue: "bg-blue-200 dark:bg-blue-500/30",
-                  pink: "bg-pink-200 dark:bg-pink-500/30",
-                  purple: "bg-purple-200 dark:bg-purple-500/30",
-                  orange: "bg-orange-200 dark:bg-orange-500/30",
-                };
-                return colorMap[color] || "bg-yellow-200 dark:bg-yellow-500/30";
-              };
 
               return (
                 <div
@@ -831,7 +794,7 @@ export default function PassageClient({
           {/* 두 번째 번역본 */}
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 py-4">
-              {decodedBook} {chapter}장 [{translations.find(t => t.code === secondTranslation)?.name}]
+              {decodedBook} {chapter}장 [{TRANSLATIONS.find(t => t.code === secondTranslation)?.name}]
             </h2>
             {secondVerses.map((v) => (
               <div
@@ -854,7 +817,7 @@ export default function PassageClient({
         /* 일반 보기 모드 */
         <div className="space-y-3">
           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 py-4">
-            {decodedBook} {chapter}장 [{translations.find(t => t.code === translation)?.name}]
+            {decodedBook} {chapter}장 [{TRANSLATIONS.find(t => t.code === translation)?.name}]
           </h2>
           {verses.length === 0 && (
             <div className="text-center py-12 text-slate-500 dark:text-slate-400">
@@ -864,22 +827,6 @@ export default function PassageClient({
           {verses.map((v) => {
           const highlightColor = highlightedVerseIds.get(v.id);
           const hasHighlight = !!highlightColor;
-          const hasBookmark = bookmarkedVerseIds.has(v.id);
-          const hasNote = notedVerseIds.has(v.id);
-          const hasAnyMarker = hasHighlight || hasBookmark || hasNote;
-
-          // 하이라이트 색상에 따른 배경 색상 매핑 (형광펜 효과)
-          const getBackgroundColorClass = (color: string) => {
-            const colorMap: Record<string, string> = {
-              yellow: "bg-yellow-200 dark:bg-yellow-500/30",
-              green: "bg-green-200 dark:bg-green-500/30",
-              blue: "bg-blue-200 dark:bg-blue-500/30",
-              pink: "bg-pink-200 dark:bg-pink-500/30",
-              purple: "bg-purple-200 dark:bg-purple-500/30",
-              orange: "bg-orange-200 dark:bg-orange-500/30",
-            };
-            return colorMap[color] || "bg-yellow-200 dark:bg-yellow-500/30";
-          };
 
           return (
             <div
