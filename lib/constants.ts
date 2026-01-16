@@ -9,7 +9,9 @@ export interface Translation {
   available: boolean;
 }
 
-// 지원 번역본 목록
+// 지원 번역본 목록 (정적 - 동적으로 API에서 가져오는 것을 권장)
+// 이 목록은 fallback으로만 사용됩니다.
+// 실제 번역본 목록은 /api/v1/translations에서 가져오세요.
 export const TRANSLATIONS: Translation[] = [
   { code: "korHRV", name: "개역개정", available: true },
   { code: "korRV", name: "개역한글", available: false },
@@ -18,6 +20,9 @@ export const TRANSLATIONS: Translation[] = [
 ];
 
 // 번역본 코드 → DB 컬럼명 매핑
+// NOTE: 정규화된 스키마에서는 더 이상 사용되지 않습니다.
+// 레거시 호환성을 위해 유지하되, 새 코드에서는 사용하지 마세요.
+// @deprecated Use normalized schema with verse_translations table
 export const TRANSLATION_COLUMNS: Record<string, string> = {
   korHRV: "korhrv",
   korRV: "korrv",

@@ -7,6 +7,28 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    // 하이라이트 배경색 클래스 (구절에 적용되는 색상)
+    'bg-yellow-200',
+    'dark:bg-yellow-500/30',
+    'bg-green-200',
+    'dark:bg-green-500/30',
+    'bg-blue-200',
+    'dark:bg-blue-500/30',
+    'bg-pink-200',
+    'dark:bg-pink-500/30',
+    'bg-purple-200',
+    'dark:bg-purple-500/30',
+    'bg-orange-200',
+    'dark:bg-orange-500/30',
+    // 색상 팔레트 버튼 클래스
+    'bg-yellow-400',
+    'bg-green-400',
+    'bg-blue-400',
+    'bg-pink-400',
+    'bg-purple-400',
+    'bg-orange-400',
+  ],
   theme: {
     extend: {
       fontFamily: {
