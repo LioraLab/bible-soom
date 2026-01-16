@@ -5,20 +5,41 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { useRouter } from "next/navigation";
 import RichTextEditor from "@/components/editor/rich-text-editor";
 import { TRANSLATIONS } from "@/lib/constants";
+import { Tab } from "@headlessui/react";
 import PassageHeader, { BookInfo } from "./PassageHeader";
+import GlobalHeader from "./GlobalHeader";
+import BiblePanel from "./BiblePanel";
 import VerseDisplay, { Verse } from "./VerseDisplay";
 import HighlightModal, { ContextMenu } from "./HighlightModal";
 
+// Panel configuration interface
+export interface PanelConfig {
+  id: string;                    // 'panel-1', 'panel-2', 'panel-3'
+  translation: string;           // Translation code
+  bookAbbrEng: string;           // English book abbreviation (Gen, Exo, Matt)
+  bookName: string;              // Localized book name for display
+  chapter: number;               // Chapter number
+  verses: Verse[];               // Loaded verses
+  isLoading: boolean;            // Loading state
+  error?: string;                // Error message if fetch failed
+}
+
 export default function PassageClient({
   translation,
-  book,
+  translationName,
+  bookAbbrEng,
+  bookName,
   chapter,
   verses,
+  availableBooks,
 }: {
   translation: string;
-  book: string;
+  translationName: string;
+  bookAbbrEng: string;
+  bookName: string;
   chapter: number;
   verses: Verse[];
+  availableBooks: BookInfo[];
 }) {
   // 컨텍스트 메뉴 상태
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
@@ -34,67 +55,109 @@ export default function PassageClient({
   const [notedVerseIds, setNotedVerseIds] = useState<Set<number>>(new Set());
   const [noteContents, setNoteContents] = useState<Map<number, { id: number; content: string }>>(new Map());
 
-  // 병렬 보기 상태
-  const [isParallelView, setIsParallelView] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('isParallelView') === 'true';
+  // 패널 시스템 상태 (최대 3개 패널)
+  const [panels, setPanels] = useState<PanelConfig[]>([
+    {
+      id: 'panel-1',
+      translation,
+      bookAbbrEng,
+      bookName,
+      chapter,
+      verses,
+      isLoading: false
     }
-    return false;
-  });
-  const [secondTranslation, setSecondTranslation] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('secondTranslation') || 'NIV';
-    }
-    return 'NIV';
-  });
-  const [secondVerses, setSecondVerses] = useState<Verse[]>([]);
-
-  // 책 목록 상태
-  const [availableBooks, setAvailableBooks] = useState<BookInfo[]>([]);
+  ]);
 
   // 글자 설정 상태
-  const [fontSize, setFontSize] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('fontSize');
-      return saved ? Number(saved) : 3;
-    }
-    return 3;
-  });
-  const [fontWeight, setFontWeight] = useState<"normal" | "bold">(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('fontWeight') as "normal" | "bold") || "normal";
-    }
-    return "normal";
-  });
+  const [fontSize, setFontSize] = useState(3);
+  const [fontWeight, setFontWeight] = useState<"normal" | "bold">("normal");
 
   // 책갈피 상태
   const [isChapterBookmarked, setIsChapterBookmarked] = useState(false);
 
+  // 모바일/데스크톱 감지
+  const [isMobile, setIsMobile] = useState(false);
+
   const { user } = useAuth();
   const router = useRouter();
 
-  // URL 디코딩
-  const decodedBook = decodeURIComponent(book);
-
-  // 책 목록 가져오기
-  useEffect(() => {
-    async function fetchBooks() {
-      const res = await fetch('/api/v1/books');
-      if (res.ok) {
-        const data = await res.json();
-        setAvailableBooks(data.books || []);
-      }
-    }
-    fetchBooks();
-  }, []);
-
-  // 병렬 보기 상태를 localStorage에 저장
+  // 클라이언트 사이드에서 localStorage 값 읽어오기 (hydration mismatch 방지)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('isParallelView', String(isParallelView));
-      localStorage.setItem('secondTranslation', secondTranslation);
+      // 글자 설정 불러오기
+      const savedFontSize = localStorage.getItem('fontSize');
+      const savedFontWeight = localStorage.getItem('fontWeight') as "normal" | "bold" | null;
+      if (savedFontSize) setFontSize(Number(savedFontSize));
+      if (savedFontWeight) setFontWeight(savedFontWeight);
+
+      // 패널 2-3 복원 (마이그레이션 포함)
+      let panelsToRestore: Array<{ translation: string; bookAbbrEng?: string; book?: string; bookName?: string; chapter: number }> = [];
+
+      const savedPanels = localStorage.getItem('biblePanels');
+      if (savedPanels) {
+        try {
+          panelsToRestore = JSON.parse(savedPanels);
+        } catch (e) {
+          console.error('Failed to parse biblePanels:', e);
+        }
+      } else {
+        // 마이그레이션: 기존 isParallelView에서 변환
+        const oldParallelView = localStorage.getItem('isParallelView') === 'true';
+        const oldSecondTranslation = localStorage.getItem('secondTranslation');
+
+        if (oldParallelView && oldSecondTranslation) {
+          panelsToRestore = [{
+            translation: oldSecondTranslation,
+            bookAbbrEng: bookAbbrEng,
+            chapter: chapter
+          }];
+          // 마이그레이션 후 기존 키 제거
+          localStorage.removeItem('isParallelView');
+          localStorage.removeItem('secondTranslation');
+        }
+      }
+
+      // 패널 복원 (검증 및 마이그레이션 포함)
+      if (panelsToRestore.length > 0) {
+        const newPanels = panelsToRestore
+          .filter(p => p.translation && (p.bookAbbrEng || p.book) && p.chapter)
+          .slice(0, 2) // 최대 2개 (panel-2, panel-3)
+          .map((p, index) => ({
+            id: `panel-${index + 2}`,
+            translation: p.translation,
+            bookAbbrEng: p.bookAbbrEng || bookAbbrEng, // 마이그레이션: 없으면 현재 bookAbbrEng 사용
+            bookName: p.bookName || '', // 일단 빈 문자열, fetchPanelData에서 채워짐
+            chapter: p.chapter,
+            verses: [],
+            isLoading: true
+          }));
+
+        if (newPanels.length > 0) {
+          setPanels(current => [...current, ...newPanels]);
+          // 각 패널 데이터 가져오기
+          newPanels.forEach(panel => {
+            fetchPanelData(panel.id, panel.translation, panel.bookAbbrEng, panel.chapter);
+          });
+        }
+      }
     }
-  }, [isParallelView, secondTranslation]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 패널 2-3 상태를 localStorage에 저장
+  useEffect(() => {
+    if (typeof window !== 'undefined' && panels.length > 1) {
+      const panelsToSave = panels.slice(1).map(p => ({
+        translation: p.translation,
+        bookAbbrEng: p.bookAbbrEng,
+        bookName: p.bookName,
+        chapter: p.chapter
+      }));
+      localStorage.setItem('biblePanels', JSON.stringify(panelsToSave));
+    } else if (typeof window !== 'undefined' && panels.length === 1) {
+      // 모든 패널이 제거되면 localStorage도 정리
+      localStorage.removeItem('biblePanels');
+    }
+  }, [panels]);
 
   // 글자 크기와 굵기를 localStorage에 저장
   useEffect(() => {
@@ -104,30 +167,55 @@ export default function PassageClient({
     }
   }, [fontSize, fontWeight]);
 
-  // 현재 책/장의 북마크 상태 확인
+  // 현재 책/장의 북마크 상태 확인 (마이그레이션 포함)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const bookmarks = JSON.parse(localStorage.getItem('chapterBookmarks') || '[]');
-      const key = `${decodedBook}-${chapter}`;
+      let bookmarks = JSON.parse(localStorage.getItem('chapterBookmarks') || '[]');
+
+      // 마이그레이션: 한글 책 이름을 영어 약어로 변환
+      let needsMigration = false;
+      bookmarks = bookmarks.map((bookmark: string) => {
+        // 이미 영어 약어 형식이면 그대로 반환
+        if (/^[A-Za-z]+-\d+$/.test(bookmark)) {
+          return bookmark;
+        }
+        // 한글 포함하면 마이그레이션 필요
+        needsMigration = true;
+        const parts = bookmark.split('-');
+        const chapterNum = parts[parts.length - 1];
+        // 현재 책이 해당 북마크와 일치하면 새 형식으로 변환
+        if (bookmark.startsWith(bookName)) {
+          return `${bookAbbrEng}-${chapterNum}`;
+        }
+        // 매칭 안 되면 삭제 (마이그레이션 불가)
+        return null;
+      }).filter(Boolean);
+
+      if (needsMigration) {
+        localStorage.setItem('chapterBookmarks', JSON.stringify(bookmarks));
+      }
+
+      const key = `${bookAbbrEng}-${chapter}`;
       setIsChapterBookmarked(bookmarks.includes(key));
     }
-  }, [decodedBook, chapter]);
+  }, [bookAbbrEng, bookName, chapter]);
 
-  // 병렬 보기용 두 번째 번역본 데이터 가져오기
+  // 모바일/데스크톱 감지
   useEffect(() => {
-    if (!isParallelView) return;
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
-    async function fetchSecondTranslation() {
-      const encodedBook = encodeURIComponent(decodedBook);
-      const res = await fetch(`/api/v1/passages?translation=${secondTranslation}&book=${encodedBook}&chapter=${chapter}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSecondVerses(data.verses || []);
-      }
-    }
-
-    fetchSecondTranslation();
-  }, [isParallelView, secondTranslation, decodedBook, chapter]);
+  // Panel-1을 URL props와 동기화
+  useEffect(() => {
+    setPanels(current => current.map(p =>
+      p.id === 'panel-1'
+        ? { ...p, translation, bookAbbrEng, bookName, chapter, verses, isLoading: false }
+        : p
+    ));
+  }, [translation, bookAbbrEng, bookName, chapter, verses]);
 
   // 하이라이트, 북마크, 메모 목록 가져오기
   useEffect(() => {
@@ -338,45 +426,137 @@ export default function PassageClient({
     }
   }
 
-  // 번역본 변경 핸들러
-  function handleTranslationChange(newTranslation: string) {
-    const encodedBook = encodeURIComponent(decodedBook);
-    router.push(`/bible/${newTranslation}/${encodedBook}/${chapter}`);
+  // ========== 패널 관리 함수 ==========
+
+  // 패널 데이터 가져오기 (panels 2-3용)
+  async function fetchPanelData(panelId: string, translation: string, bookAbbrEng: string, chapter: number) {
+    const res = await fetch(`/api/v1/passages?translation=${translation}&book=${bookAbbrEng}&chapter=${chapter}`);
+
+    if (res.ok) {
+      const data = await res.json();
+      setPanels(current => current.map(p =>
+        p.id === panelId ? {
+          ...p,
+          bookAbbrEng: data.book || bookAbbrEng,
+          bookName: data.book_name || '',
+          verses: data.verses || [],
+          isLoading: false,
+          error: undefined
+        } : p
+      ));
+    } else {
+      const errorData = await res.json().catch(() => ({ error: 'Failed to load' }));
+      setPanels(current => current.map(p =>
+        p.id === panelId ? { ...p, isLoading: false, error: errorData.error || 'Failed to load' } : p
+      ));
+    }
   }
 
-  // 두 번째 번역본 변경 핸들러
+  // 패널 추가 (최대 3개)
+  function addPanel() {
+    if (panels.length >= 3) return;
+
+    const newPanel: PanelConfig = {
+      id: `panel-${panels.length + 1}`,
+      translation: 'NIV',
+      bookAbbrEng: panels[0].bookAbbrEng,  // 첫 번째 패널과 동일한 책/장으로 시작
+      bookName: '',                         // fetchPanelData에서 채워짐
+      chapter: panels[0].chapter,
+      verses: [],
+      isLoading: true
+    };
+
+    setPanels([...panels, newPanel]);
+    fetchPanelData(newPanel.id, newPanel.translation, newPanel.bookAbbrEng, newPanel.chapter);
+  }
+
+  // 패널 제거 (panel-1은 제거 불가)
+  function removePanel(panelId: string) {
+    if (panels.length === 1 || panelId === 'panel-1') return;
+    setPanels(panels.filter(p => p.id !== panelId));
+  }
+
+  // 패널 내비게이션 업데이트
+  function updatePanelNavigation(panelId: string, bookAbbrEng: string, chapter: number) {
+    if (panelId === 'panel-1') {
+      // Panel-1: URL 업데이트
+      const panel = panels.find(p => p.id === panelId)!;
+      router.push(`/bible/${panel.translation}/${bookAbbrEng}/${chapter}`);
+    } else {
+      // Panels 2-3: 상태 업데이트 및 데이터 fetch
+      const panel = panels.find(p => p.id === panelId)!;
+      setPanels(panels.map(p =>
+        p.id === panelId ? { ...p, bookAbbrEng, chapter, isLoading: true } : p
+      ));
+      fetchPanelData(panelId, panel.translation, bookAbbrEng, chapter);
+    }
+  }
+
+  // 패널 번역본 변경
+  function updatePanelTranslation(panelId: string, newTranslation: string) {
+    const panel = panels.find(p => p.id === panelId)!;
+
+    if (panelId === 'panel-1') {
+      // Panel-1: URL 업데이트
+      router.push(`/bible/${newTranslation}/${panel.bookAbbrEng}/${panel.chapter}`);
+    } else {
+      // Panels 2-3: 상태 업데이트 및 데이터 fetch
+      setPanels(panels.map(p =>
+        p.id === panelId ? { ...p, translation: newTranslation, isLoading: true } : p
+      ));
+      fetchPanelData(panelId, newTranslation, panel.bookAbbrEng, panel.chapter);
+    }
+  }
+
+  // ========== 레거시 핸들러 (PassageHeader 호환용) ==========
+
+  // 번역본 변경 핸들러 (panel-1용)
+  function handleTranslationChange(newTranslation: string) {
+    router.push(`/bible/${newTranslation}/${bookAbbrEng}/${chapter}`);
+  }
+
+  // 두 번째 번역본 변경 핸들러 (레거시 - 현재는 패널 추가로 대체)
   function handleSecondTranslationChange(newTranslation: string, isParallel: boolean) {
-    setSecondTranslation(newTranslation);
-    setIsParallelView(isParallel);
+    if (isParallel && panels.length < 3) {
+      // 병렬 보기 활성화 → 패널 추가
+      const newPanel: PanelConfig = {
+        id: `panel-${panels.length + 1}`,
+        translation: newTranslation,
+        bookAbbrEng: bookAbbrEng,
+        bookName: '',  // fetchPanelData에서 채워짐
+        chapter: chapter,
+        verses: [],
+        isLoading: true
+      };
+      setPanels([...panels, newPanel]);
+      fetchPanelData(newPanel.id, newPanel.translation, newPanel.bookAbbrEng, newPanel.chapter);
+    }
   }
 
   // 이전 장으로 이동
   function goToPreviousChapter() {
-    const encodedBook = encodeURIComponent(decodedBook);
     const prevChapter = chapter - 1;
     if (prevChapter >= 1) {
-      router.push(`/bible/${translation}/${encodedBook}/${prevChapter}`);
+      router.push(`/bible/${translation}/${bookAbbrEng}/${prevChapter}`);
     }
   }
 
   // 다음 장으로 이동
   function goToNextChapter() {
-    const encodedBook = encodeURIComponent(decodedBook);
     const nextChapter = chapter + 1;
-    router.push(`/bible/${translation}/${encodedBook}/${nextChapter}`);
+    router.push(`/bible/${translation}/${bookAbbrEng}/${nextChapter}`);
   }
 
   // 책/장 선택 핸들러
-  function handleBookChapterSelect(selectedBook: string, selectedChapter: number) {
-    const encodedBook = encodeURIComponent(selectedBook);
-    router.push(`/bible/${translation}/${encodedBook}/${selectedChapter}`);
+  function handleBookChapterSelect(selectedBookAbbr: string, selectedChapter: number) {
+    router.push(`/bible/${translation}/${selectedBookAbbr}/${selectedChapter}`);
   }
 
   // 책갈피 토글
   function toggleChapterBookmark() {
     if (typeof window !== 'undefined') {
       const bookmarks = JSON.parse(localStorage.getItem('chapterBookmarks') || '[]');
-      const key = `${decodedBook}-${chapter}`;
+      const key = `${bookAbbrEng}-${chapter}`;
 
       if (isChapterBookmarked) {
         const updated = bookmarks.filter((b: string) => b !== key);
@@ -394,91 +574,117 @@ export default function PassageClient({
 
   return (
     <div className="mx-auto max-w-7xl px-2 sm:px-4 py-8 space-y-6 relative">
-      {/* 헤더 컴포넌트 */}
-      <PassageHeader
-        book={decodedBook}
-        chapter={chapter}
-        translation={translation}
-        isParallelView={isParallelView}
-        secondTranslation={secondTranslation}
-        availableBooks={availableBooks}
+      {/* 전역 헤더 */}
+      <GlobalHeader
         fontSize={fontSize}
         fontWeight={fontWeight}
         isChapterBookmarked={isChapterBookmarked}
-        onTranslationChange={handleTranslationChange}
-        onSecondTranslationChange={handleSecondTranslationChange}
-        onParallelViewClose={() => setIsParallelView(false)}
+        currentPanelCount={panels.length}
         onFontSizeChange={setFontSize}
         onFontWeightChange={setFontWeight}
         onChapterBookmarkToggle={toggleChapterBookmark}
-        onNavigatePrevious={goToPreviousChapter}
-        onNavigateNext={goToNextChapter}
-        onBookChapterSelect={handleBookChapterSelect}
+        onAddPanel={addPanel}
       />
 
-      {/* 구절 표시 영역 */}
-      {isParallelView ? (
-        /* 병렬 보기 모드 */
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* 첫 번째 번역본 */}
-          <div className="space-y-3">
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 py-4">
-              {decodedBook} {chapter}장 [{TRANSLATIONS.find(t => t.code === translation)?.name}]
-            </h2>
-            {verses.map((v) => (
-              <VerseDisplay
-                key={v.id}
-                verse={v}
-                highlightColor={highlightedVerseIds.get(v.id)}
-                hasNote={notedVerseIds.has(v.id)}
-                fontSize={fontSize}
-                fontWeight={fontWeight}
-                onVerseClick={handleVerseClick}
-                onNoteClick={(e, verse) => openNoteModal(verse)}
-              />
+      {/* 패널 영역 - 반응형 레이아웃 */}
+      {isMobile ? (
+        /* 모바일: 탭 인터페이스 */
+        <Tab.Group>
+          <Tab.List className="flex gap-2 border-b border-stone-200 dark:border-primary-800 overflow-x-auto pb-2 mb-6">
+            {panels.map((panel) => (
+              <Tab
+                key={panel.id}
+                className={({ selected }) =>
+                  `flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-bold transition-all whitespace-nowrap ${
+                    selected
+                      ? 'bg-primary-600 text-white shadow-lg'
+                      : 'bg-stone-100 dark:bg-primary-900 text-stone-600 dark:text-primary-200 hover:bg-stone-200 dark:hover:bg-primary-800'
+                  }`
+                }
+              >
+                <span>{TRANSLATIONS.find(t => t.code === panel.translation)?.name}</span>
+                {panel.id !== 'panel-1' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removePanel(panel.id);
+                    }}
+                    className="ml-1 hover:text-red-300 transition-colors"
+                    title="패널 닫기"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </Tab>
             ))}
-          </div>
+          </Tab.List>
 
-          {/* 두 번째 번역본 */}
-          <div className="space-y-3">
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 py-4">
-              {decodedBook} {chapter}장 [{TRANSLATIONS.find(t => t.code === secondTranslation)?.name}]
-            </h2>
-            {secondVerses.map((v) => (
-              <VerseDisplay
-                key={v.id}
-                verse={v}
-                hasNote={false}
-                fontSize={fontSize}
-                fontWeight={fontWeight}
-                onVerseClick={() => {}}
-                onNoteClick={() => {}}
-                isInteractive={false}
-              />
+          <Tab.Panels>
+            {panels.map((panel) => (
+              <Tab.Panel key={panel.id} unmount={false}>
+                <BiblePanel
+                  panel={panel}
+                  availableBooks={availableBooks}
+                  fontSize={fontSize}
+                  fontWeight={fontWeight}
+                  highlightedVerseIds={highlightedVerseIds}
+                  notedVerseIds={notedVerseIds}
+                  onVerseClick={handleVerseClick}
+                  onNoteClick={(e, verse) => openNoteModal(verse)}
+                  onTranslationChange={updatePanelTranslation}
+                  onNavigatePrevious={(panelId) => {
+                    const panel = panels.find(p => p.id === panelId)!;
+                    updatePanelNavigation(panelId, panel.bookAbbrEng, panel.chapter - 1);
+                  }}
+                  onNavigateNext={(panelId) => {
+                    const panel = panels.find(p => p.id === panelId)!;
+                    updatePanelNavigation(panelId, panel.bookAbbrEng, panel.chapter + 1);
+                  }}
+                  onBookChapterSelect={updatePanelNavigation}
+                  onClose={removePanel}
+                />
+              </Tab.Panel>
             ))}
-          </div>
-        </div>
+          </Tab.Panels>
+        </Tab.Group>
       ) : (
-        /* 일반 보기 모드 */
-        <div className="space-y-3">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 py-4">
-            {decodedBook} {chapter}장 [{TRANSLATIONS.find(t => t.code === translation)?.name}]
-          </h2>
-          {verses.length === 0 && (
-            <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-              구절을 찾을 수 없습니다.
-            </div>
-          )}
-          {verses.map((v) => (
-            <VerseDisplay
-              key={v.id}
-              verse={v}
-              highlightColor={highlightedVerseIds.get(v.id)}
-              hasNote={notedVerseIds.has(v.id)}
+        /* 데스크톱: 그리드 레이아웃 */
+        <div className={`grid gap-8 ${
+          panels.length === 1 ? 'grid-cols-1' :
+          panels.length === 2 ? 'grid-cols-2' :
+          'grid-cols-3'
+        }`}>
+          {panels.map((panel) => (
+            <BiblePanel
+              key={panel.id}
+              panel={panel}
+              availableBooks={availableBooks}
               fontSize={fontSize}
               fontWeight={fontWeight}
+              highlightedVerseIds={highlightedVerseIds}
+              notedVerseIds={notedVerseIds}
               onVerseClick={handleVerseClick}
               onNoteClick={(e, verse) => openNoteModal(verse)}
+              onTranslationChange={updatePanelTranslation}
+              onNavigatePrevious={(panelId) => {
+                const panel = panels.find(p => p.id === panelId)!;
+                updatePanelNavigation(panelId, panel.bookAbbrEng, panel.chapter - 1);
+              }}
+              onNavigateNext={(panelId) => {
+                const panel = panels.find(p => p.id === panelId)!;
+                updatePanelNavigation(panelId, panel.bookAbbrEng, panel.chapter + 1);
+              }}
+              onBookChapterSelect={updatePanelNavigation}
+              onClose={removePanel}
             />
           ))}
         </div>
@@ -511,7 +717,7 @@ export default function PassageClient({
                     : "Reflection Note"}
                 </h3>
                 <p className="text-sm font-bold text-stone-500 dark:text-primary-400 font-bible">
-                  {decodedBook} {chapter}:{noteModal.verse}
+                  {bookName} {chapter}:{noteModal.verse}
                 </p>
               </div>
 
