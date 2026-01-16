@@ -1,33 +1,104 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo, useRef } from "react";
+import Spinner from "@/components/ui/Spinner";
+import Skeleton from "@/components/ui/Skeleton";
+import Badge from "@/components/ui/Badge";
 
 const SUGGESTED_KEYWORDS = ["사랑", "위로", "평안", "믿음", "기도", "은혜", "소망", "감사"];
 
 export default function SearchPage() {
   const [q, setQ] = useState("");
-  const [translation, setTranslation] = useState("kor");
+  const [translation, setTranslation] = useState("korHRV");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<string | null>(null);
+
+  // 드래그 스크롤을 위한 ref
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  // 검색 결과를 "책" 단위로 그룹화
+  const groupedResults = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    results.forEach((result) => {
+      const key = result.book;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(result);
+    });
+    return groups;
+  }, [results]);
+
+  // 책 목록 (탭으로 사용)
+  const books = useMemo(() => Object.keys(groupedResults), [groupedResults]);
+
+  // 선택된 책의 결과 (null이면 전체)
+  const selectedResults = useMemo(() => {
+    if (!selectedBook) return results; // 전체 결과 반환
+    return groupedResults[selectedBook] || [];
+  }, [selectedBook, groupedResults, results]);
 
   const search = async (overrideQ?: string) => {
     const query = overrideQ || q;
     if (!query.trim()) return;
-    
+
     setLoading(true);
     setHasSearched(true);
-    
+    setSelectedBook(null);
+
     try {
       const res = await fetch(
         `/api/v1/search?q=${encodeURIComponent(query)}&translation=${translation}`
       );
       const data = await res.json();
-      setResults(data.results ?? []);
+      const searchResults = data.results ?? [];
+      setResults(searchResults);
+
+      // 검색 후 "전체" 탭이 기본 선택되도록 null 유지
+      // (이미 setSelectedBook(null)로 초기화되어 있음)
     } catch (error) {
       console.error("Search failed:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // 드래그 스크롤 핸들러
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // 스크롤 속도 조절
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  // 화살표 버튼으로 스크롤
+  const scroll = (direction: "left" | "right") => {
+    if (!scrollRef.current) return;
+    const scrollAmount = 200;
+    scrollRef.current.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
   };
 
   const handleSuggestedClick = (keyword: string) => {
@@ -70,22 +141,15 @@ export default function SearchPage() {
                 value={translation}
                 onChange={(e) => setTranslation(e.target.value)}
               >
-                <option value="kor">개역개정</option>
-                <option value="niv">NIV</option>
+                <option value="korHRV">개역개정</option>
+                <option value="NIV">NIV</option>
               </select>
               <button
                 onClick={() => search()}
                 disabled={loading}
                 className="rounded-full bg-primary-600 px-10 py-3 text-white font-black hover:bg-primary-700 disabled:bg-stone-300 dark:disabled:bg-primary-800 transition-all active:scale-95 shadow-lg shadow-primary-500/20 flex items-center justify-center min-w-[120px]"
               >
-                {loading ? (
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                ) : (
-                  "검색하기"
-                )}
+                {loading ? <Spinner size="md" color="white" /> : "검색하기"}
               </button>
             </div>
           </div>
@@ -110,28 +174,117 @@ export default function SearchPage() {
           {loading ? (
             <div className="space-y-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-32 bg-white dark:bg-primary-900 rounded-[2rem] border border-stone-100 dark:border-primary-800 animate-pulse" />
+                <Skeleton key={i} height="128px" rounded="2xl" className="border border-stone-100 dark:border-primary-800" />
               ))}
             </div>
           ) : results.length > 0 ? (
             <div className="space-y-10">
+              {/* 검색 결과 헤더 */}
               <div className="flex items-center gap-4">
                 <p className="text-xs font-black text-stone-400 dark:text-primary-500 uppercase tracking-[0.2em]">
                   Search Results
                 </p>
                 <div className="flex-1 h-px bg-stone-200 dark:bg-primary-800"></div>
-                <span className="text-xs font-black bg-primary-50 dark:bg-primary-800 text-primary-600 dark:text-primary-300 px-4 py-1 rounded-full border border-primary-100 dark:border-primary-700">
+                <Badge variant="primary" size="md" className="rounded-full">
                   {results.length} found
-                </span>
+                </Badge>
               </div>
 
+              {/* 책별 탭 캐러셀 */}
+              <div className="relative group flex items-center gap-4">
+                {/* 왼쪽 화살표 */}
+                <button
+                  onClick={() => scroll("left")}
+                  className="flex-shrink-0 w-10 h-10 rounded-full bg-white dark:bg-primary-900 border border-stone-200 dark:border-primary-800 shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-stone-50 dark:hover:bg-primary-800"
+                  aria-label="이전"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-primary-600 dark:text-primary-300">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                  </svg>
+                </button>
+
+                {/* 탭 스크롤 영역 */}
+                <div className="flex-1 relative min-w-0">
+                  <div
+                    ref={scrollRef}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseLeave}
+                    className={`overflow-x-auto overflow-y-hidden scrollbar-hide ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+                  >
+                    <div className="flex flex-nowrap gap-2 pb-2 px-6">
+                      {/* 전체 탭 */}
+                      <button
+                        onClick={() => setSelectedBook(null)}
+                        className={`flex-shrink-0 px-6 py-3 rounded-full font-bold text-sm transition-all whitespace-nowrap ${
+                          selectedBook === null
+                            ? "bg-primary-600 text-white shadow-lg shadow-primary-500/30"
+                            : "bg-white dark:bg-primary-900 text-stone-600 dark:text-primary-300 border border-stone-200 dark:border-primary-800 hover:border-primary-300 dark:hover:border-primary-600"
+                        }`}
+                      >
+                        전체
+                        <span className={`ml-2 text-xs ${
+                          selectedBook === null
+                            ? "text-white/70"
+                            : "text-stone-400 dark:text-primary-500"
+                        }`}>
+                          ({results.length})
+                        </span>
+                      </button>
+
+                      {/* 책별 탭 */}
+                      {books.map((book) => {
+                        const count = groupedResults[book].length;
+                        return (
+                          <button
+                            key={book}
+                            onClick={() => setSelectedBook(book)}
+                            className={`flex-shrink-0 px-6 py-3 rounded-full font-bold text-sm transition-all whitespace-nowrap ${
+                              selectedBook === book
+                                ? "bg-primary-600 text-white shadow-lg shadow-primary-500/30"
+                                : "bg-white dark:bg-primary-900 text-stone-600 dark:text-primary-300 border border-stone-200 dark:border-primary-800 hover:border-primary-300 dark:hover:border-primary-600"
+                            }`}
+                          >
+                            {book}
+                            <span className={`ml-2 text-xs ${
+                              selectedBook === book
+                                ? "text-white/70"
+                                : "text-stone-400 dark:text-primary-500"
+                            }`}>
+                              ({count})
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 양옆 페이드 효과 - 탭이 잘리지 않고 부드럽게 사라지도록 */}
+                  <div className="absolute left-0 top-0 bottom-2 w-8 bg-gradient-to-r from-paper-50 dark:from-primary-950 via-paper-50/80 dark:via-primary-950/80 to-transparent pointer-events-none" />
+                  <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-paper-50 dark:from-primary-950 via-paper-50/80 dark:via-primary-950/80 to-transparent pointer-events-none" />
+                </div>
+
+                {/* 오른쪽 화살표 */}
+                <button
+                  onClick={() => scroll("right")}
+                  className="flex-shrink-0 w-10 h-10 rounded-full bg-white dark:bg-primary-900 border border-stone-200 dark:border-primary-800 shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-stone-50 dark:hover:bg-primary-800"
+                  aria-label="다음"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-primary-600 dark:text-primary-300">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* 선택된 장의 결과 */}
               <div className="grid gap-6">
-                {results.map((r, index) => (
+                {selectedResults.map((r, index) => (
                   <a
                     key={r.id}
                     className="group block rounded-[2.5rem] border border-stone-100 dark:border-primary-800 p-10 bg-white dark:bg-primary-900 hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-2xl hover:shadow-primary-900/5 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4"
                     style={{ animationDelay: `${index * 50}ms` }}
-                    href={`/bible/${translation}/${encodeURIComponent(r.book)}/${r.chapter}#${r.verse}`}
+                    href={`/bible/${translation}/${r.book_abbr_eng || encodeURIComponent(r.book)}/${r.chapter}#${r.verse}`}
                   >
                     <div className="flex items-center gap-3 mb-6">
                       <span className="px-3 py-1 bg-paper-50 dark:bg-primary-800 text-primary-600 dark:text-primary-300 text-[10px] font-black uppercase tracking-widest rounded-md border border-stone-100 dark:border-primary-700">

@@ -1,3 +1,6 @@
+import BackgroundDecoration from "@/components/ui/BackgroundDecoration";
+import Badge from "@/components/ui/Badge";
+
 export default function Page() {
   return (
     <main className="min-h-screen bg-paper-50 dark:bg-primary-950 transition-colors duration-500">
@@ -5,8 +8,8 @@ export default function Page() {
       <section className="relative py-16 md:py-20 overflow-hidden">
         {/* 배경 장식 */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-paper-200 dark:bg-primary-900/20 rounded-full blur-[100px] opacity-60"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-stone-200 dark:bg-primary-800/10 rounded-full blur-[120px] opacity-60"></div>
+          <BackgroundDecoration variant="blob" position="top-left" />
+          <BackgroundDecoration variant="gradient" position="bottom-right" className="w-[40%] h-[40%] blur-[120px]" />
         </div>
 
         <div className="relative z-10 mx-auto max-w-6xl px-4 text-center">
@@ -100,7 +103,7 @@ export default function Page() {
       {/* 오늘의 말씀 섹션 */}
       <section className="py-24 px-6 bg-paper-100 dark:bg-primary-950">
         <div className="mx-auto max-w-4xl text-center">
-          <h3 className="text-xs font-black text-primary-400 dark:text-primary-500 uppercase tracking-[0.3em] mb-12">Today's Word</h3>
+          <h3 className="text-xs font-black text-primary-400 dark:text-primary-500 uppercase tracking-[0.3em] mb-12">Today&apos;s Word</h3>
           <div className="relative group">
             {/* 장식 요소 */}
             <div className="absolute -inset-1 bg-gradient-to-r from-primary-200 to-paper-300 dark:from-primary-800 dark:to-primary-700 rounded-[2.5rem] blur opacity-40 group-hover:opacity-60 transition duration-1000"></div>
@@ -108,7 +111,7 @@ export default function Page() {
             <div className="relative bg-white dark:bg-primary-900 rounded-[2.5rem] p-12 md:p-20 shadow-xl border border-white/50 dark:border-primary-800 overflow-hidden">
               <div className="absolute top-0 left-0 w-1.5 h-full bg-primary-300 dark:bg-primary-600"></div>
               <p className="font-bible text-2xl md:text-4xl text-primary-900 dark:text-primary-50 leading-[1.8] mb-10 text-balance tracking-tight">
-                "하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라"
+                &quot;하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다 멸망하지 않고 영생을 얻게 하려 하심이라&quot;
               </p>
               <div className="flex items-center justify-center gap-4">
                 <div className="h-px w-12 bg-stone-200 dark:bg-primary-700"></div>

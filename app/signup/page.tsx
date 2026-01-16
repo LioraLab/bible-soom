@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import BackgroundDecoration from "@/components/ui/BackgroundDecoration";
+import Input from "@/components/ui/Input";
+import Label from "@/components/ui/Label";
+import Button from "@/components/ui/Button";
+import Alert from "@/components/ui/Alert";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -62,8 +67,8 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center px-4 bg-paper-50 dark:bg-primary-950 relative overflow-hidden transition-colors duration-500">
       {/* 배경 장식 */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-paper-200 dark:bg-primary-900/20 rounded-full blur-[100px] opacity-60"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary-100 dark:bg-primary-800/10 rounded-full blur-[100px] opacity-60"></div>
+        <BackgroundDecoration variant="blob" position="top-left" />
+        <BackgroundDecoration variant="blob" position="bottom-right" className="bg-primary-100 dark:bg-primary-800/10" />
       </div>
 
       <div className="max-w-md w-full space-y-10 relative z-10">
@@ -95,37 +100,23 @@ export default function SignupPage() {
           ) : (
             <form onSubmit={handleSignup} className="space-y-6">
               <div>
-                <label
-                  htmlFor="email"
-                  className="block text-xs font-black uppercase tracking-widest text-stone-400 dark:text-primary-400 mb-3 ml-1"
-                >
-                  이메일 주소
-                </label>
-                <input
+                <Label htmlFor="email">이메일 주소</Label>
+                <Input
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-5 py-4 rounded-2xl border border-stone-200 dark:border-primary-800 bg-paper-50 dark:bg-primary-950 text-primary-900 dark:text-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium placeholder-stone-400 dark:placeholder-primary-700"
+                  onChange={setEmail}
                   placeholder="example@email.com"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="password"
-                  className="block text-xs font-black uppercase tracking-widest text-stone-400 dark:text-primary-400 mb-3 ml-1"
-                >
-                  비밀번호
-                </label>
-                <input
+                <Label htmlFor="password">비밀번호</Label>
+                <Input
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-5 py-4 rounded-2xl border border-stone-200 dark:border-primary-800 bg-paper-50 dark:bg-primary-950 text-primary-900 dark:text-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium placeholder-stone-400 dark:placeholder-primary-700"
+                  onChange={setPassword}
                   placeholder="••••••••"
                 />
                 <p className="mt-2 text-[10px] text-stone-400 dark:text-primary-400 font-bold ml-1">
@@ -134,49 +125,35 @@ export default function SignupPage() {
               </div>
 
               <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-xs font-black uppercase tracking-widest text-stone-400 dark:text-primary-400 mb-3 ml-1"
-                >
-                  비밀번호 확인
-                </label>
-                <input
+                <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+                <Input
                   id="confirmPassword"
                   type="password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="w-full px-5 py-4 rounded-2xl border border-stone-200 dark:border-primary-800 bg-paper-50 dark:bg-primary-950 text-primary-900 dark:text-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium placeholder-stone-400 dark:placeholder-primary-700"
+                  onChange={setConfirmPassword}
                   placeholder="••••••••"
                 />
               </div>
 
               {error && (
-                <div className="text-red-600 dark:text-red-400 text-xs font-bold bg-red-50 dark:bg-red-900/20 p-4 rounded-2xl border border-red-100 dark:border-red-900/30 animate-shake">
-                  {error}
-                </div>
+                <Alert variant="error">{error}</Alert>
               )}
 
-              <button
+              <Button
                 type="submit"
+                variant="primary"
+                size="lg"
+                loading={loading}
                 disabled={loading}
-                className="group w-full py-4 px-6 bg-primary-600 hover:bg-primary-700 disabled:bg-stone-300 dark:disabled:bg-primary-800 text-white font-black rounded-2xl shadow-xl shadow-primary-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full"
               >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    가입 진행 중...
-                  </span>
-                ) : (
+                {loading ? "가입 진행 중..." : (
                   <>
                     회원가입하기
                     <span className="group-hover:translate-x-1 transition-transform">→</span>
                   </>
                 )}
-              </button>
+              </Button>
             </form>
           )}
 

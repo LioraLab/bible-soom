@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { useRouter } from "next/navigation";
+import Skeleton from "@/components/ui/Skeleton";
 
 export default function Header() {
   const { user, loading, signOut } = useAuth();
@@ -26,12 +27,13 @@ export default function Header() {
           <nav className="flex items-center space-x-1">
             <NavLink href="/books">성경</NavLink>
             <NavLink href="/search">검색</NavLink>
+            <NavLink href="/components">컴포넌트</NavLink>
             {user && <NavLink href="/mypage">서재</NavLink>}
 
             <div className="w-px h-4 bg-stone-300 dark:bg-primary-800 mx-3 hidden sm:block" />
 
             {loading ? (
-              <div className="w-20 h-9 bg-stone-100 dark:bg-primary-900 rounded-xl animate-pulse"></div>
+              <Skeleton width="80px" height="36px" rounded="xl" />
             ) : user ? (
               <div className="flex items-center space-x-4">
                 <span className="text-xs font-bold text-stone-500 dark:text-primary-400 hidden lg:block">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Tabs from "@/components/ui/Tabs";
 
 interface MyPageClientProps {
   userEmail: string;
@@ -84,26 +85,18 @@ export default function MyPageClient({ userEmail, notes, highlights, bookmarks }
 
       {/* 탭 네비게이션 */}
       <div className="flex justify-center">
-        <div className="inline-flex p-1.5 bg-paper-100 dark:bg-primary-900 rounded-2xl border border-stone-200 dark:border-primary-800">
-          {[
+        <Tabs
+          tabs={[
             { id: "all", label: "전체 보기" },
             { id: "notes", label: "묵상 노트" },
             { id: "highlights", label: "하이라이트" },
             { id: "bookmarks", label: "북마크" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as Tab)}
-              className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
-                activeTab === tab.id
-                  ? "bg-white dark:bg-primary-800 text-primary-700 dark:text-primary-100 shadow-sm"
-                  : "text-stone-500 dark:text-primary-400 hover:text-stone-800 dark:hover:text-primary-200"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+          ]}
+          activeTab={activeTab}
+          onChange={(tabId) => setActiveTab(tabId as Tab)}
+          variant="contained"
+          className="border border-stone-200 dark:border-primary-800"
+        />
       </div>
 
       {/* 컨텐츠 영역 */}

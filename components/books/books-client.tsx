@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { TRANSLATIONS } from "@/lib/constants";
+import Skeleton from "@/components/ui/Skeleton";
+import Tabs from "@/components/ui/Tabs";
 
 type Testament = "OT" | "NT";
 
 interface Book {
   id: number;
   name: string;
+  abbr_eng: string;
   testament: Testament;
   chapters: number;
   book_order: number;
@@ -35,7 +38,7 @@ export default function BooksClient() {
     async function fetchBooks() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/v1/books?testament=${testament}`);
+        const res = await fetch(`/api/v1/books?testament=${testament}&translation=${translation}`);
         const data = await res.json();
         setBooks(data.books || []);
       } catch (error) {
@@ -46,7 +49,7 @@ export default function BooksClient() {
     }
 
     fetchBooks();
-  }, [testament]);
+  }, [testament, translation]);
 
   // 현재 선택된 구약/신약에 맞는 카테고리 필터링
   const currentCategories = CATEGORIES.filter(c => c.testament === testament);
@@ -72,27 +75,17 @@ export default function BooksClient() {
           
           <div className="flex gap-3">
              {/* 구약/신약 토글 */}
-            <div className="flex p-1.5 bg-white dark:bg-primary-900 rounded-[1.25rem] border border-stone-200 dark:border-primary-800 shadow-sm">
-              <button
-                onClick={() => setTestament("OT")}
-                className={`px-6 py-3 text-sm font-black rounded-2xl transition-all duration-300 ${
-                  testament === "OT"
-                    ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
-                    : "text-stone-500 dark:text-primary-400 hover:text-stone-800 dark:hover:text-primary-200"
-                }`}
-              >
-                Old Testament
-              </button>
-              <button
-                onClick={() => setTestament("NT")}
-                className={`px-6 py-3 text-sm font-black rounded-2xl transition-all duration-300 ${
-                  testament === "NT"
-                    ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
-                    : "text-stone-500 dark:text-primary-400 hover:text-stone-800 dark:hover:text-primary-200"
-                }`}
-              >
-                New Testament
-              </button>
+            <div className="border border-stone-200 dark:border-primary-800 rounded-[1.25rem] shadow-sm">
+              <Tabs
+                tabs={[
+                  { id: "OT", label: "Old Testament" },
+                  { id: "NT", label: "New Testament" }
+                ]}
+                activeTab={testament}
+                onChange={(tabId) => setTestament(tabId as Testament)}
+                variant="contained"
+                className="text-sm"
+              />
             </div>
           </div>
         </header>
@@ -124,10 +117,10 @@ export default function BooksClient() {
            <div className="space-y-12">
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-4">
-                <div className="h-8 w-32 bg-stone-200 dark:bg-primary-900 rounded-lg animate-pulse" />
+                <Skeleton width="128px" height="32px" rounded="lg" />
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {[1, 2, 3, 4].map((j) => (
-                    <div key={j} className="h-40 bg-stone-100 dark:bg-primary-900 rounded-[2rem] animate-pulse" />
+                    <Skeleton key={j} height="160px" rounded="2xl" />
                   ))}
                 </div>
               </div>
@@ -224,7 +217,7 @@ export default function BooksClient() {
                 {Array.from({ length: selectedBook.chapters }, (_, i) => i + 1).map((chapterNum) => (
                   <a
                     key={chapterNum}
-                    href={`/bible/${translation}/${encodeURIComponent(selectedBook.name)}/${chapterNum}`}
+                    href={`/bible/${translation}/${selectedBook.abbr_eng}/${chapterNum}`}
                     className="aspect-square flex flex-col items-center justify-center rounded-2xl border border-stone-200 dark:border-primary-800 bg-paper-50 dark:bg-primary-900 text-primary-800 dark:text-primary-100 font-black text-lg hover:bg-primary-600 hover:text-white hover:border-primary-600 hover:shadow-lg hover:shadow-primary-500/30 hover:scale-105 transition-all duration-200"
                   >
                     {chapterNum}
