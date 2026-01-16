@@ -31,49 +31,49 @@ Bible Soom은 언제 어디서나 성경을 읽고, 묵상하고, 기록할 수 
 
 ### 1. 저장소 클론
 
-\`\`\`bash
+```bash
 git clone <repository-url>
 cd bible-soom
-\`\`\`
+```
 
 ### 2. 의존성 설치
 
-\`\`\`bash
+```bash
 npm install
-\`\`\`
+```
 
 ### 3. 환경 변수 설정
 
-\`.env.local.example\` 파일을 복사하여 \`.env.local\` 파일을 생성하고 Supabase 정보를 입력하세요.
+`.env.local.example` 파일을 복사하여 `.env.local` 파일을 생성하고 Supabase 정보를 입력하세요.
 
-\`\`\`bash
+```bash
 cp .env.local.example .env.local
-\`\`\`
+```
 
-\`.env.local\` 파일:
-\`\`\`
+`.env.local` 파일:
+```
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-\`\`\`
+```
 
 ### 4. Supabase 데이터베이스 설정
 
 1. [Supabase](https://supabase.com)에서 새 프로젝트 생성
-2. SQL Editor에서 \`supabase-schema.sql\` 파일의 내용 실행
+2. SQL Editor에서 `supabase-schema.sql` 파일의 내용 실행
 3. 성경 본문 데이터 import (별도 데이터 필요)
 
 ### 5. 개발 서버 실행
 
-\`\`\`bash
+```bash
 npm run dev
-\`\`\`
+```
 
 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인하세요.
 
 ## 프로젝트 구조 📁
 
-\`\`\`
+```
 bible-soom/
 ├── app/                          # Next.js App Router
 │   ├── api/v1/                   # API 엔드포인트
@@ -95,40 +95,40 @@ bible-soom/
 ├── types/                        # TypeScript 타입 정의
 │   └── database.ts               # Supabase 데이터베이스 타입
 └── supabase-schema.sql           # 데이터베이스 스키마
-\`\`\`
+```
 
 ## API 엔드포인트 🔌
 
 ### 성경 본문
-- \`GET /api/v1/passages?translation=kor&book=Genesis&chapter=1\`
+- `GET /api/v1/passages?translation=kor&book=Genesis&chapter=1`
 
 ### 검색
-- \`GET /api/v1/search?q=사랑&translation=kor\`
+- `GET /api/v1/search?q=사랑&translation=kor`
 
 ### 노트
-- \`GET /api/v1/notes\` - 노트 목록
-- \`POST /api/v1/notes\` - 노트 추가
-- \`PUT /api/v1/notes/[id]\` - 노트 수정
-- \`DELETE /api/v1/notes/[id]\` - 노트 삭제
+- `GET /api/v1/notes` - 노트 목록
+- `POST /api/v1/notes` - 노트 추가
+- `PUT /api/v1/notes/[id]` - 노트 수정
+- `DELETE /api/v1/notes/[id]` - 노트 삭제
 
 ### 북마크
-- \`GET /api/v1/bookmarks\` - 북마크 목록
-- \`POST /api/v1/bookmarks\` - 북마크 추가
-- \`DELETE /api/v1/bookmarks/[id]\` - 북마크 삭제
+- `GET /api/v1/bookmarks` - 북마크 목록
+- `POST /api/v1/bookmarks` - 북마크 추가
+- `DELETE /api/v1/bookmarks/[id]` - 북마크 삭제
 
 ### 하이라이트
-- \`GET /api/v1/highlights\` - 하이라이트 목록
-- \`POST /api/v1/highlights\` - 하이라이트 추가
-- \`DELETE /api/v1/highlights/[id]\` - 하이라이트 삭제
+- `GET /api/v1/highlights` - 하이라이트 목록
+- `POST /api/v1/highlights` - 하이라이트 추가
+- `DELETE /api/v1/highlights/[id]` - 하이라이트 삭제
 
 ## 배포 📦
 
 ### Vercel 배포
 
-\`\`\`bash
+```bash
 npm install -g vercel
 vercel
-\`\`\`
+```
 
 환경 변수를 Vercel 대시보드에서 설정해야 합니다.
 
