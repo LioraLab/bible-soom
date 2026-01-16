@@ -45,5 +45,15 @@ next-env.d.ts
 # Data files
 HRV(ver.4)/
 
-# Documentation (optional - uncomment if you want to track PDFs)
-# *.pdf
+# Documentation
+*.pdf
+
+# Build artifacts & logs
+*.log
+*.pid
+build-output.log
+npm-dev.log
+server-npm-dev.sh
+
+.vscode/
+prompts/
