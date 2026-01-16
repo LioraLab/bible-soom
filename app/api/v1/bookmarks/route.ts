@@ -8,12 +8,38 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("bookmarks")
-    .select("id, verse_id, verses!inner(book, chapter, verse), created_at")
+    .select(`
+      id,
+      verse_id,
+      created_at,
+      verses!inner(
+        id,
+        book_id,
+        chapter,
+        verse,
+        books!inner(
+          abbr_eng
+        )
+      )
+    `)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ bookmarks: data });
+
+  // Format response to include book abbreviation
+  const formattedData = data?.map((b: any) => ({
+    id: b.id,
+    verse_id: b.verse_id,
+    created_at: b.created_at,
+    verses: {
+      book: b.verses.books.abbr_eng,
+      chapter: b.verses.chapter,
+      verse: b.verses.verse
+    }
+  }));
+
+  return NextResponse.json({ bookmarks: formattedData });
 }
 
 export async function POST(req: NextRequest) {
