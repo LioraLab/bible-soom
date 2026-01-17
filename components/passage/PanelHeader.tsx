@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { TRANSLATIONS, BOOK_CHAPTERS } from "@/lib/constants";
+import { TRANSLATIONS } from "@/lib/constants";
 import { BookInfo } from "./PassageHeader";
-import { getChapterSuffix, getBookNameByTranslation, type BookWithNames } from "@/lib/books";
+import { getChapterSuffix } from "@/lib/books";
 
 // Props 타입 정의
 export interface PanelHeaderProps {

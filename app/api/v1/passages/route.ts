@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { BookWithNames } from "@/lib/books";
-import { extractLanguageFromTranslation } from "@/lib/books";
 
 /**
  * GET /api/v1/passages
@@ -107,11 +106,9 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Step 4: Get book name in translation's language
-  const language = extractLanguageFromTranslation(translationCode);
-  const bookName = book.book_names.find(bn => bn.language === language);
-  const displayBookName = bookName ? bookName.name :
-    (book.book_names.find(bn => bn.language === 'en')?.name || book.abbr_eng);
+  // Step 4: Get book name - UI는 항상 한국어 고정
+  const koreanBookName = book.book_names.find(bn => bn.language === 'ko');
+  const displayBookName = koreanBookName ? koreanBookName.name : book.abbr_eng;
 
   // Step 5: Format response
   const verses = (versesData || []).map((v: any) => ({

@@ -2,7 +2,6 @@ import PassageClient from "@/components/passage/passage-client";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import type { BookWithNames } from "@/lib/books";
-import { extractLanguageFromTranslation } from "@/lib/books";
 
 export default async function Page(props: {
   params: Promise<{ translation: string; book: string; chapter: string }>;
@@ -87,11 +86,9 @@ export default async function Page(props: {
     return notFound();
   }
 
-  // Step 5: Get book name in translation's language
-  const language = extractLanguageFromTranslation(translationCode);
-  const bookName = book.book_names.find(bn => bn.language === language);
-  const displayBookName = bookName ? bookName.name :
-    (book.book_names.find(bn => bn.language === 'en')?.name || book.abbr_eng);
+  // Step 5: Get book name - UI는 항상 한국어 고정
+  const koreanBookName = book.book_names.find(bn => bn.language === 'ko');
+  const displayBookName = koreanBookName ? koreanBookName.name : book.abbr_eng;
 
   // Format verses
   const verses = (versesData || []).map((v: any) => ({
@@ -102,11 +99,10 @@ export default async function Page(props: {
     text: v.verse_translations[0]?.text || "",
   }));
 
-  // Format books for PassageClient (convert BookWithNames to BookInfo with extended fields)
+  // Format books for PassageClient - UI는 항상 한국어 고정
   const availableBooks = books.map((b) => {
-    const bookNameInLang = b.book_names.find(bn => bn.language === language);
-    const bookDisplayName = bookNameInLang ? bookNameInLang.name :
-      (b.book_names.find(bn => bn.language === 'en')?.name || b.abbr_eng);
+    const koreanName = b.book_names.find(bn => bn.language === 'ko');
+    const bookDisplayName = koreanName ? koreanName.name : b.abbr_eng;
 
     return {
       id: b.id,

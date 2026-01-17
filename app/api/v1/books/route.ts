@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { extractLanguageFromTranslation, getBookNameByTranslation } from "@/lib/books";
 
 /**
  * GET /api/v1/books
@@ -56,33 +55,20 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Process books to add name field based on translation/language
+  // Process books to add name field
+  // UI는 항상 한국어이므로 translation/language 매개변수와 관계없이 한국어 책 이름 사용
   let books = data || [];
 
-  // Add name field based on translation or language parameter
   books = books.map((book: any) => {
-    let bookName = '';
-
-    if (translation) {
-      // Use translation code to determine language
-      bookName = getBookNameByTranslation(book, translation);
-    } else if (language) {
-      // Use language parameter directly
-      const bookNameObj = book.book_names.find((bn: any) => bn.language === language);
-      bookName = bookNameObj ? bookNameObj.name : book.abbr_eng;
-    } else {
-      // Default to Korean
-      const koreanName = book.book_names.find((bn: any) => bn.language === 'ko');
-      bookName = koreanName ? koreanName.name : book.abbr_eng;
-    }
+    // 항상 한국어 책 이름 반환 (UI 한국어 고정 정책)
+    const koreanName = book.book_names.find((bn: any) => bn.language === 'ko');
+    const bookName = koreanName ? koreanName.name : book.abbr_eng;
 
     return {
       ...book,
       name: bookName,
-      // Optionally filter book_names if language is specified
-      book_names: language
-        ? book.book_names.filter((bn: any) => bn.language === language)
-        : book.book_names,
+      // book_names는 전체 반환 (필터링 제거 - 필요시 클라이언트에서 처리)
+      book_names: book.book_names,
     };
   });
 
