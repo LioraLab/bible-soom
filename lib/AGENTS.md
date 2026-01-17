@@ -34,6 +34,15 @@ const { supabase, user } = result;
 ### books.ts
 Book data and utility functions for working with biblical books (66 books metadata, abbreviations, etc.).
 
+**UI 한국어 고정 정책** (2026-01 적용):
+- `getChapterSuffix()` - 번역본과 관계없이 항상 '장' 반환
+- `formatChapterDisplay()` - 항상 '{n}장' 형식 반환
+- `formatPassageReference()` - 항상 한국어 책 이름 사용
+- `formatChapterTitle()` - 항상 한국어 책 이름 + '장' 사용
+- `getBookNameByLanguage()` - 특정 언어의 책 이름 조회 (신규)
+
+**translationCode 매개변수**: 하위 호환성을 위해 유지되지만 무시됨.
+
 ## Subdirectories
 
 ### supabase/

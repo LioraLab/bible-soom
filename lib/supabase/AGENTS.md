@@ -28,6 +28,7 @@ This directory contains Supabase client factory functions that provide properly 
 - **Context**: Server Components, API Routes, Server Actions
 - **Implementation**: Wraps `createRouteHandlerClient()` with `cookies()` from `next/headers`
 - **Authentication**: Uses Next.js server-side cookies for session validation
+- **Next.js 15+ 호환성**: `cookies()` 반환 타입 변경에 따른 타입 캐스팅 적용
 - **Use Cases**:
   - API route handlers in `app/api/v1/**`
   - Server Components (default in App Router)

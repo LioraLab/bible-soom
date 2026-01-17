@@ -85,6 +85,14 @@ All navigation updates the URL using Next.js router.
 - Must be within range for book (1 to BOOK_CHAPTERS[book])
 - Return 404 if out of range
 
+### UI 한국어 고정 정책
+
+**2026-01 적용**: 번역본에 관계없이 모든 UI 요소는 한국어로 표시됩니다.
+
+- **책 이름**: 항상 한국어 (창세기, 마태복음 등)
+- **장 표시**: 항상 '{n}장' 형식
+- **URL의 번역본 코드**: 성경 본문 언어만 결정 (UI는 영향 없음)
+
 ### SEO Considerations
 
 Generate metadata for each page:
@@ -103,11 +111,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 - **Internal**:
   - `components/passage/passage-client.tsx` - Main reading interface
   - `lib/constants.ts` - BOOK_CHAPTERS for validation
+  - `lib/supabase/server.ts` - Server-side Supabase client
   - `app/api/v1/passages` - Verse data source
 
 - **External**:
   - Next.js dynamic routes
   - Next.js metadata API
+
+**제거된 의존성** (2026-01):
+- `lib/books`의 `extractLanguageFromTranslation()` - UI 한국어 고정으로 불필요
 
 ## Common Modifications
 

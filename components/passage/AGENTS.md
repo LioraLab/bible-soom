@@ -42,7 +42,7 @@ passage-client.tsx (~815 lines) - Orchestrator Component
 |------|-------|----------------|
 | **passage-client.tsx** | ~815 | Global state management, panel orchestration, API coordination, user interaction handlers |
 | **BiblePanel.tsx** | ~200 | Single panel rendering, verse display, panel-specific navigation |
-| **PanelHeader.tsx** | ~150 | Panel controls, book/chapter selection, translation dropdown, close button |
+| **PanelHeader.tsx** | ~150 | Panel controls, book/chapter selection, translation dropdown, close button (lib/books import 정리됨 - 2026-01) |
 | **VerseDisplay.tsx** | ~100 | Individual verse component with highlight/note rendering |
 | **GlobalHeader.tsx** | ~100 | Font size/weight controls, theme toggle, add panel button |
 | **HighlightModal.tsx** | ~120 | Contextual menu for highlight colors, notes, bookmarks |

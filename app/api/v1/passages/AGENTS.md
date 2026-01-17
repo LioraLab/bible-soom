@@ -94,17 +94,16 @@ book_names (book_id, language, name, abbr)
 - Multi-language book names via `book_names` table
 - Translation's language extracted by `extractLanguageFromTranslation()` helper
 
-### Language-Aware Book Names
+### Book Name Display
 
-**Book Name Resolution Logic** (lines 110-114):
+**UI 한국어 고정 정책** (2026-01 적용):
 
-1. Extract language from translation code (`extractLanguageFromTranslation()`)
-   - Example: `korHRV` → `ko`, `NIV` → `en`, `zhCUV` → `zh`
-2. Find book name in that language from `book_names` array
-3. Fallback to English name if language not available
-4. Final fallback to `abbr_eng` if no names found
+UI는 항상 한국어로 표시되므로 번역본과 관계없이 항상 한국어 책 이름을 반환합니다.
 
-**Why This Matters**: Korean translation shows "창세기", English shows "Genesis", Chinese would show "創世記" - all from the same endpoint.
+1. `book_names`에서 `language='ko'`인 항목 검색
+2. Fallback → `abbr_eng` (영문 약어)
+
+**결과**: 영어 NIV 번역본을 요청해도 책 이름은 "창세기"로 표시됩니다.
 
 ### Performance Considerations
 
@@ -136,8 +135,11 @@ book_names (book_id, language, name, abbr)
 
 **Depends On**:
 - `lib/supabase/server` - Server-side Supabase client creation
-- `lib/books` - Type definitions (`BookWithNames`) and language extraction
+- `lib/books` - Type definitions (`BookWithNames`)
 - `translations`, `books`, `verses`, `verse_translations` database tables
+
+**제거된 의존성** (2026-01):
+- `lib/books`의 `extractLanguageFromTranslation()` - UI 한국어 고정으로 불필요
 
 ### Common Modifications
 

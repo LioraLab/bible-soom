@@ -49,12 +49,14 @@ API endpoint for retrieving Bible book metadata including names, chapter counts,
 
 ### Book Name Resolution Logic
 
-The endpoint adds a `name` field to each book using the following priority:
+**UI 한국어 고정 정책** (2026-01 적용):
 
-1. If `translation` param provided → calls `getBookNameByTranslation(book, translation)` from `lib/books`
-2. Else if `language` param provided → finds book_names entry matching language
-3. Else → defaults to Korean (language='ko')
-4. Fallback → `abbr_eng` if no match found
+UI는 항상 한국어로 표시되므로 `translation`/`language` 파라미터와 관계없이 항상 한국어 책 이름을 반환합니다.
+
+1. `book_names`에서 `language='ko'`인 항목 검색
+2. Fallback → `abbr_eng` (영문 약어)
+
+**참고**: `translation`, `language` 파라미터는 하위 호환성을 위해 유지되지만 무시됩니다.
 
 ### Database Schema
 
@@ -109,8 +111,10 @@ GET /api/v1/books?translation=korHRV  // Returns Korean names
 ## Dependencies
 
 - **lib/supabase/server** - `createServerSupabase()` for server-side client
-- **lib/books** - `getBookNameByTranslation()`, `extractLanguageFromTranslation()`
 - **next/server** - `NextRequest`, `NextResponse`
+
+**제거된 의존성** (2026-01):
+- `lib/books`의 `extractLanguageFromTranslation()`, `getBookNameByTranslation()` - UI 한국어 고정으로 불필요
 - **Supabase Database**:
   - `books` table (66 rows)
   - `book_names` table (multilingual book names)
