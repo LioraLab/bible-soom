@@ -118,6 +118,30 @@ export function getBookNameByTranslation(
 }
 
 /**
+ * Get book name for a specific language (UI용)
+ *
+ * UI는 항상 한국어로 표시하므로 이 함수를 사용하여
+ * 번역본과 관계없이 특정 언어의 책 이름을 가져옵니다.
+ *
+ * @param book Book data with names
+ * @param language ISO 639-1 language code (e.g., 'ko', 'en')
+ * @returns Book name in the specified language
+ */
+export function getBookNameByLanguage(
+  book: BookData | BookWithNames,
+  language: string
+): string {
+  // Check if book has book_names array
+  if ('book_names' in book && book.book_names && book.book_names.length > 0) {
+    const bookName = book.book_names.find(bn => bn.language === language);
+    if (bookName) return bookName.name;
+  }
+
+  // Fallback: return abbr_eng
+  return book.abbr_eng;
+}
+
+/**
  * Get book abbreviation for a specific translation
  *
  * @param book Book data with names
@@ -157,43 +181,30 @@ export function getBookAbbrByTranslation(
 // ============================================
 
 /**
- * Get chapter suffix for a specific translation
+ * Get chapter suffix for UI display
  *
- * Examples:
- * - Korean: "1장" (with suffix)
- * - Chinese: "1章"
- * - Japanese: "1章"
- * - English: "1" (no suffix)
+ * UI는 항상 한국어로 표시하므로 번역본과 관계없이 '장' 반환
  *
- * @param translationCode Translation code
- * @returns Chapter suffix string
+ * @param translationCode Translation code (무시됨, 하위 호환성을 위해 유지)
+ * @returns Chapter suffix string ('장')
  */
-export function getChapterSuffix(translationCode: string): string {
-  const language = extractLanguageFromTranslation(translationCode);
-
-  const suffixMap: Record<string, string> = {
-    ko: '장',
-    zh: '章',
-    ja: '章',
-    en: '',
-    es: '',
-    fr: '',
-    de: '',
-  };
-
-  return suffixMap[language] || '';
+export function getChapterSuffix(translationCode?: string): string {
+  // UI는 항상 한국어이므로 번역본과 관계없이 '장' 반환
+  return '장';
 }
 
 /**
- * Format chapter display (e.g., "1장", "Chapter 1")
+ * Format chapter display for UI
+ *
+ * UI는 항상 한국어로 표시하므로 번역본과 관계없이 '{n}장' 형식 반환
  *
  * @param chapter Chapter number
- * @param translationCode Translation code
- * @returns Formatted chapter string
+ * @param translationCode Translation code (무시됨, 하위 호환성을 위해 유지)
+ * @returns Formatted chapter string (e.g., "1장")
  */
-export function formatChapterDisplay(chapter: number, translationCode: string): string {
-  const suffix = getChapterSuffix(translationCode);
-  return `${chapter}${suffix}`;
+export function formatChapterDisplay(chapter: number, translationCode?: string): string {
+  // UI는 항상 한국어이므로 번역본과 관계없이 '장' 사용
+  return `${chapter}장`;
 }
 
 // ============================================
@@ -319,48 +330,51 @@ export function isValidChapter(book: BookData, chapter: number): boolean {
 // ============================================
 
 /**
- * Format full passage reference
+ * Format full passage reference for UI
  *
- * Examples:
- * - Korean: "창세기 1:1"
- * - English: "Genesis 1:1"
+ * UI는 항상 한국어로 표시하므로 번역본과 관계없이 한국어 책 이름 사용
+ * 예: "창세기 1:1", "창세기 1장"
  *
  * @param book Book data
  * @param chapter Chapter number
- * @param verse Verse number
- * @param translationCode Translation code
- * @returns Formatted passage reference
+ * @param verse Verse number (optional)
+ * @param translationCode Translation code (무시됨, 하위 호환성을 위해 유지)
+ * @returns Formatted passage reference in Korean
  */
 export function formatPassageReference(
-  book: BookWithNames,
+  book: BookData | BookWithNames,
   chapter: number,
-  verse: number,
-  translationCode: string
+  verse?: number,
+  translationCode?: string
 ): string {
-  const bookName = getBookNameByTranslation(book, translationCode);
-  return `${bookName} ${chapter}:${verse}`;
+  // UI는 항상 한국어
+  const bookName = getBookNameByLanguage(book, 'ko');
+
+  if (verse !== undefined) {
+    return `${bookName} ${chapter}:${verse}`;
+  }
+  return `${bookName} ${chapter}장`;
 }
 
 /**
- * Format chapter title
+ * Format chapter title for UI
  *
- * Examples:
- * - Korean: "창세기 1장"
- * - English: "Genesis 1"
+ * UI는 항상 한국어로 표시하므로 번역본과 관계없이 한국어 책 이름 + '장' 사용
+ * 예: "창세기 1장", "마태복음 5장"
  *
  * @param book Book data
  * @param chapter Chapter number
- * @param translationCode Translation code
- * @returns Formatted chapter title
+ * @param translationCode Translation code (무시됨, 하위 호환성을 위해 유지)
+ * @returns Formatted chapter title in Korean
  */
 export function formatChapterTitle(
-  book: BookWithNames,
+  book: BookData | BookWithNames,
   chapter: number,
-  translationCode: string
+  translationCode?: string
 ): string {
-  const bookName = getBookNameByTranslation(book, translationCode);
-  const suffix = getChapterSuffix(translationCode);
-  return `${bookName} ${chapter}${suffix}`;
+  // UI는 항상 한국어이므로 book_names에서 language='ko'인 이름 사용
+  const bookName = getBookNameByLanguage(book, 'ko');
+  return `${bookName} ${chapter}장`;
 }
 
 // ============================================
