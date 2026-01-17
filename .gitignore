@@ -57,3 +57,5 @@ server-npm-dev.sh
 
 .vscode/
 prompts/
+
+.sisyphus/
