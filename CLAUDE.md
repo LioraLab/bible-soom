@@ -99,9 +99,12 @@ import { createBrowserSupabase } from '@/lib/supabase/client';
 // 서버 컴포넌트 & API 라우트용 (서버)
 import { createServerSupabase } from '@/lib/supabase/server';
 // → createRouteHandlerClient() + cookies()를 래핑
+// → Next.js 15+ 타입 호환성을 위한 캐스팅 적용됨
 ```
 
 **실수 방지**: 서버 코드에서 `createBrowserSupabase()` 사용하면 인증 실패합니다.
+
+**Next.js 15+ 호환성**: `cookies()` 반환 타입 변경으로 `lib/supabase/server.ts`에 타입 캐스팅이 적용되어 있습니다.
 
 #### 3. Auth Flow & Context
 
@@ -168,7 +171,37 @@ passage-client.tsx (오케스트레이터)
 3. Grid 레이아웃으로 N개 패널 렌더링 (1-3개 권장)
 4. 각 패널의 상태는 독립적 (서로 다른 책/장 가능)
 
-#### 5. API Routes Pattern
+#### 5. UI 한국어 고정 정책 (2026-01)
+
+**핵심 원칙**: UI는 항상 한국어로 표시됩니다. 번역본 코드는 성경 본문 언어만 결정합니다.
+
+```typescript
+// ✅ 올바른 패턴 - 한국어 고정
+const koreanBookName = book.book_names.find(bn => bn.language === 'ko');
+const displayBookName = koreanBookName?.name || book.abbr_eng;
+
+// ❌ 잘못된 패턴 - 번역본 기반 언어 추출 (제거됨)
+const language = extractLanguageFromTranslation(translationCode); // 사용하지 않음
+```
+
+**영향받는 컴포넌트**:
+- `app/bible/[translation]/[book]/[chapter]/page.tsx` - 책 이름 한국어 고정
+- `app/api/v1/books/route.ts` - `name` 필드 항상 한국어
+- `app/api/v1/passages/route.ts` - `book_name` 항상 한국어
+- `lib/books.ts` - `getChapterSuffix()`, `formatChapterDisplay()` 등 한국어 고정
+
+**`lib/books.ts` 주요 함수**:
+```typescript
+getChapterSuffix()        // 항상 '장' 반환
+formatChapterDisplay()    // 항상 '{n}장' 형식
+formatPassageReference()  // 항상 한국어 책 이름 사용
+formatChapterTitle()      // 항상 한국어 책 이름 + '장'
+getBookNameByLanguage()   // 특정 언어의 책 이름 조회 (신규)
+```
+
+**참고**: `translationCode` 매개변수는 하위 호환성을 위해 유지되지만 무시됩니다.
+
+#### 6. API Routes Pattern
 
 **공통 패턴** - 모든 엔드포인트는 일관된 구조를 따릅니다:
 
